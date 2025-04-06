@@ -7,9 +7,11 @@ use App\Repository\TaskRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class TaskController extends AbstractController
 {
@@ -21,11 +23,6 @@ final class TaskController extends AbstractController
         $response = $serializer->serialize($tasks, 'json');
 
         return JsonResponse::fromJsonString($response, status: 200);
-
-//        return $this->json([
-//            'message' => 'Welcome to your new controller!',
-//            'path' => 'src/Controller/TaskController.php',
-//        ]);
     }
 
     #[Route('/task/{id}', name: 'app_task_show', methods: ['GET'])]
@@ -34,25 +31,33 @@ final class TaskController extends AbstractController
         $task = $taskRepository->find($id);
 
         if (!$task) {
-            return new JsonResponse(data: ["error" => "Task not found"], status: 404);
+            return new JsonResponse(["error" => "Task not found"], Response::HTTP_NOT_FOUND);
         }
 
         $response = $serializer->serialize($task, 'json');
 
 
-        return JsonResponse::fromJsonString($response, status: 200);
+        return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
 
     #[Route('/task', name: 'app_task_create', methods: ['POST'])]
-    public function new(TaskRepository $taskRepository): RedirectResponse
+    public function new(TaskRepository $taskRepository, ValidatorInterface $validator, Request $request): Response|RedirectResponse
     {
+        $title = $request->getPayload()->get('title');
+        $description = $request->getPayload()->get('description');
+        $deadline = $request->getPayload()->get('deadline');
+
         $task = new Task();
-        $task->setTitle('New task');
-        $task->setDescription('New task');
-        $deadline = new \DateTime('now');
-        $deadline->modify('+1 day');
+        $task->setTitle($title);
+        $task->setDescription($description);
         $task->setDeadline($deadline);
         $task->setCreatedAt(new \DateTimeImmutable('now'));
+
+        $errors = $validator->validate($task, null, ['task']);
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+            return new Response($errorsString, Response::HTTP_BAD_REQUEST);
+        }
 
         $taskRepository->create($task);
 
@@ -60,35 +65,44 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task/{id}', name: 'app_task_delete', methods: ['DELETE'])]
-    public function delete(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
+    public function delete(TaskRepository $taskRepository, int $id): JsonResponse
     {
         $task = $taskRepository->find($id);
         if (!$task) {
-            return new JsonResponse(data: ["error" => "Task not found"], status: 404);
+            return new JsonResponse(["error" => "Task not found"], Response::HTTP_NOT_FOUND);
         }
 
         $taskRepository->delete($task);
 
-        return new JsonResponse(data: ["success" => "Task deleted successfully"], status: 200);
+        return new JsonResponse(["success" => "Task deleted successfully"], Response::HTTP_OK);
     }
 
     #[Route('/task/{id}', name: 'app_task_update', methods: ['PUT'])]
-    public function edit(TaskRepository $taskRepository, SerializerInterface $serializer, int $id, Request $request): JsonResponse|RedirectResponse
+    public function edit(TaskRepository $taskRepository, ValidatorInterface $validator, int $id, Request $request): Response|RedirectResponse
     {
         $task = $taskRepository->find($id);
         if (!$task) {
-            return new JsonResponse(data: ["error" => "Task not found"], status: 404);
+            return new JsonResponse(["error" => "Task not found"], Response::HTTP_NOT_FOUND);
         }
 
         $title = $request->getPayload()->get('title');
         $description = $request->getPayload()->get('description');
+        $deadline = $request->getPayload()->get('deadline');
 
         if (!is_null($title) && $title !== '') {
             $task->setTitle($title);
         }
-
         if (!is_null($description) && $description !== '') {
             $task->setDescription($description);
+        }
+        if (!is_null($deadline) && $deadline !== '') {
+            $task->setDeadline(new \DateTime($deadline));
+        }
+
+        $errors = $validator->validate($task, null);
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+            return new Response($errorsString, Response::HTTP_BAD_REQUEST);
         }
 
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
