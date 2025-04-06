@@ -3,6 +3,7 @@
 # Cache and logs (Symfony2)
 /.env
 /.env.dev
+/.env.test
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -26,10 +27,6 @@
 /web/bundles/
 /web/uploads/
 
-# PHPUnit
-/app/phpunit.xml
-/phpunit.xml
-
 # Build data
 /build/
 
@@ -43,6 +40,7 @@
 /.web-server-pid
 ###< symfony/framework-bundle ###
 
-###> phpunit/phpunit ###
+###> symfony/phpunit-bridge ###
 .phpunit.result.cache
-###< phpunit/phpunit ###
+/phpunit.xml
+###< symfony/phpunit-bridge ###
