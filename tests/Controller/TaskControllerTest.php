@@ -8,10 +8,8 @@ final class TaskControllerTest extends WebTestCase
 {
     public function testIndex(): void
     {
-//        $client = TaskControllerTest::createClient();
-//        $client->request('GET', '/task');
-//
-//        self::assertResponseIsSuccessful();
-        assert(true);
+        $client = TaskControllerTest::createClient();
+        $client->request('GET', '/task');
+        self::assertResponseIsSuccessful();
     }
 }
