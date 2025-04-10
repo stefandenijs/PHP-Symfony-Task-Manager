@@ -4,7 +4,55 @@ The following tool is an example backend for a task managing system. The basic c
 
 ## Prerequisites
 
-PHP installed, for this project I used XAMMP for PHP and other plugins.
+PHP installed, for this project I used XAMPP for PHP and other plugins.
+
+The following modules were active during the development of this backend:
+````
+[PHP Modules]
+bcmath
+bz2
+calendar
+Core
+ctype
+curl
+date
+dom
+exif
+fileinfo
+filter
+ftp
+gettext
+hash
+iconv
+json
+libxml
+mbstring
+mysqli
+mysqlnd
+openssl
+pcre
+PDO
+pdo_mysql
+pdo_pgsql
+pdo_sqlite
+Phar
+random
+readline
+Reflection
+session
+SimpleXML
+SPL
+standard
+tokenizer
+xdebug
+xml
+xmlreader
+xmlwriter
+zlib
+
+[Zend Modules]
+Xdebug
+````
 
 ## Running the project
 
