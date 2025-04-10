@@ -58,6 +58,8 @@ jobs:
           echo "Waiting for PostgreSQL..."
           sleep 1
         done
+    - name: Copy .env.example to .env
+      run: cp .env.example .env
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       env:
         DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony_test?serverVersion=16&charset=utf8
