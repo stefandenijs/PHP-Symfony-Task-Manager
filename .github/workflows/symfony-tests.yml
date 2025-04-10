@@ -70,5 +70,6 @@ jobs:
       run: cp .env.example .env
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       env:
+        APP_ENV: test
         DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony_test?serverVersion=16&charset=utf8
       run: vendor/bin/phpunit
