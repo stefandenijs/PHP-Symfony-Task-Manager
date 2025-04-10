@@ -3,7 +3,6 @@
 # Cache and logs (Symfony2)
 /.env
 /.env.dev
-/.env.local
 /.env.local.php
 /.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
@@ -26,10 +25,6 @@
 /web/bundles/
 /web/uploads/
 
-# PHPUnit
-/app/phpunit.xml
-/phpunit.xml
-
 # Build data
 /build/
 
@@ -42,3 +37,8 @@
 # Embedded web-server pid file
 /.web-server-pid
 ###< symfony/framework-bundle ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
