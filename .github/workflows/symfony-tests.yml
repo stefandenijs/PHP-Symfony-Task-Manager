@@ -58,13 +58,6 @@ jobs:
           echo "Waiting for PostgreSQL..."
           sleep 1
         done
-
-    - name: Create test database
-      run: |
-          psql -h localhost -U symfony -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'symfony_test'" | grep -q 1 || \
-          psql -h localhost -U symfony -d postgres -c "CREATE DATABASE symfony_test;"
-      env:
-        PGPASSWORD: symfony
         
     - name: Copy .env.example to .env
       run: cp .env.example .env
