@@ -61,7 +61,7 @@ jobs:
 
     - name: Create test database
       run: |
-        psql -h localhost -U symfony -c 'CREATE DATABASE symfony_test;'
+        psql -h localhost -U symfony -d postgres -c 'CREATE DATABASE symfony_test;'
       env:
         PGPASSWORD: symfony
         
