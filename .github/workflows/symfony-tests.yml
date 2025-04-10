@@ -60,5 +60,5 @@ jobs:
         done
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       env:
-        DATABASE_URL: sqlite:///%kernel.project_dir%/data/database.sqlite
+        DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony_test?serverVersion=16&charset=utf8
       run: vendor/bin/phpunit
