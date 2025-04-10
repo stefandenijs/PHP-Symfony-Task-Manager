@@ -33,7 +33,7 @@ openssl
 pcre
 PDO
 pdo_mysql
-pdo_pgsql
+pdo_pgsql # Required for connecting with the local postgress database.
 pdo_sqlite
 Phar
 random
