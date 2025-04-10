@@ -61,8 +61,8 @@ jobs:
 
     - name: Create test database
       run: |
-        psql -h localhost -U symfony -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'symfony'" | grep -q 1 || \
-        psql -h localhost -U symfony -d postgres -c "CREATE DATABASE symfony;"
+          psql -h localhost -U symfony -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'symfony_test'" | grep -q 1 || \
+          psql -h localhost -U symfony -d postgres -c "CREATE DATABASE symfony_test;""
       env:
         PGPASSWORD: symfony
         
@@ -70,5 +70,5 @@ jobs:
       run: cp .env.example .env
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       env:
-        DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=16&charset=utf8
+        DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony_test?serverVersion=16&charset=utf8
       run: vendor/bin/phpunit
