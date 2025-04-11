@@ -9,7 +9,8 @@ final class TaskControllerTest extends WebTestCase
     public function testIndex(): void
     {
         $client = TaskControllerTest::createClient();
-        $client->request('GET', '/task');
-        self::assertResponseIsSuccessful();
+
+        $crawler = $client->request('GET', '/task');
+        $this->assertResponseIsSuccessful();
     }
 }

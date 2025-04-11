@@ -4,6 +4,8 @@ services:
   database:
     container_name: task-db
     image: postgres:${POSTGRES_VERSION:-16}-alpine
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       # You should definitely change the password in production

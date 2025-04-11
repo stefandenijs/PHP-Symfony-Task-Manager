@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/symfony_task_manager</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="symfony_task_manager_test@localhost" uuid="cee0f473-8b21-49d9-bfcb-92d27ebfa2cd">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/symfony_task_manager_test</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
