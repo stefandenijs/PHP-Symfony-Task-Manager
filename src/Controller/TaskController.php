@@ -57,7 +57,7 @@ final class TaskController extends AbstractController
             return $validationResponse;
         }
 
-        $taskRepository->create($task);
+        $taskRepository->createOrUpdate($task);
 
         return $this->redirect("/task/{$task->getId()}");
     }
@@ -103,7 +103,7 @@ final class TaskController extends AbstractController
         }
 
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
-        $taskRepository->update($task);
+        $taskRepository->createOrUpdate($task);
 
         return $this->redirect("/task/{$task->getId()}");
     }
