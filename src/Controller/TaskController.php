@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 final class TaskController extends AbstractController
 {
     #[Route('/task', name: 'app_task', methods: ['GET', 'HEAD'])]
-    public function index(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
+    public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $tasks = $taskRepository->findAll();
 
@@ -26,7 +26,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task/{id}', name: 'app_task_show', methods: ['GET'])]
-    public function show(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
+    public function getTask(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
     {
         $task = $taskRepository->find($id);
 
@@ -41,7 +41,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task', name: 'app_task_create', methods: ['POST'])]
-    public function new(TaskRepository $taskRepository, ValidatorInterface $validator, Request $request): Response|RedirectResponse
+    public function createTask(TaskRepository $taskRepository, ValidatorInterface $validator, Request $request): Response|RedirectResponse
     {
         $title = $request->getPayload()->get('title');
         $description = $request->getPayload()->get('description');
@@ -55,7 +55,7 @@ final class TaskController extends AbstractController
 
         $errors = $validator->validate($task, null, ['task']);
         if (count($errors) > 0) {
-            $errorsString = (string) $errors;
+            $errorsString = (string)$errors;
             return new Response($errorsString, Response::HTTP_BAD_REQUEST);
         }
 
@@ -65,7 +65,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task/{id}', name: 'app_task_delete', methods: ['DELETE'])]
-    public function delete(TaskRepository $taskRepository, int $id): JsonResponse
+    public function deleteTask(TaskRepository $taskRepository, int $id): JsonResponse
     {
         $task = $taskRepository->find($id);
         if (!$task) {
@@ -78,7 +78,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task/{id}', name: 'app_task_update', methods: ['PUT'])]
-    public function edit(TaskRepository $taskRepository, ValidatorInterface $validator, int $id, Request $request): Response|RedirectResponse
+    public function editTask(TaskRepository $taskRepository, ValidatorInterface $validator, int $id, Request $request): Response|RedirectResponse
     {
         $task = $taskRepository->find($id);
         if (!$task) {
@@ -101,7 +101,7 @@ final class TaskController extends AbstractController
 
         $errors = $validator->validate($task, null);
         if (count($errors) > 0) {
-            $errorsString = (string) $errors;
+            $errorsString = (string)$errors;
             return new Response($errorsString, Response::HTTP_BAD_REQUEST);
         }
 
