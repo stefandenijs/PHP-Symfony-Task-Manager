@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Task;
 use App\Repository\TaskRepository;
+use App\Service\ValidatorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -11,8 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-
 final class TaskController extends AbstractController
 {
     #[Route('/task', name: 'app_task', methods: ['GET', 'HEAD'])]
@@ -41,7 +40,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task', name: 'app_task_create', methods: ['POST'])]
-    public function createTask(TaskRepository $taskRepository, ValidatorInterface $validator, Request $request): Response|RedirectResponse
+    public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): Response|JsonResponse|RedirectResponse
     {
         $title = $request->getPayload()->get('title');
         $description = $request->getPayload()->get('description');
@@ -53,10 +52,9 @@ final class TaskController extends AbstractController
         $task->setDeadline($deadline);
         $task->setCreatedAt(new \DateTimeImmutable('now'));
 
-        $errors = $validator->validate($task, null, ['task']);
-        if (count($errors) > 0) {
-            $errorsString = (string)$errors;
-            return new Response($errorsString, Response::HTTP_BAD_REQUEST);
+        $validationResponse = $validatorService->validate($task, null, ['task']);
+        if ($validationResponse !== null) {
+            return $validationResponse;
         }
 
         $taskRepository->create($task);
@@ -78,7 +76,7 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/task/{id}', name: 'app_task_update', methods: ['PUT'])]
-    public function editTask(TaskRepository $taskRepository, ValidatorInterface $validator, int $id, Request $request): Response|RedirectResponse
+    public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): Response|RedirectResponse
     {
         $task = $taskRepository->find($id);
         if (!$task) {
@@ -99,10 +97,9 @@ final class TaskController extends AbstractController
             $task->setDeadline(new \DateTime($deadline));
         }
 
-        $errors = $validator->validate($task, null);
-        if (count($errors) > 0) {
-            $errorsString = (string)$errors;
-            return new Response($errorsString, Response::HTTP_BAD_REQUEST);
+        $validationResponse = $validatorService->validate($task);
+        if ($validationResponse !== null) {
+            return $validationResponse;
         }
 
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
