@@ -97,7 +97,7 @@ final class TaskController extends AbstractController
             $task->setDeadline(new \DateTime($deadline));
         }
 
-        $validationResponse = $validatorService->validate($task);
+        $validationResponse = $validatorService->validate($task, null,  ['task']);
         if ($validationResponse !== null) {
             return $validationResponse;
         }
