@@ -12,6 +12,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 class Task
 {
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable('now');
+    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -36,6 +41,9 @@ class Task
     #[ORM\Column(nullable: true)]
     #[Ignore]
     private ?\DateTimeImmutable $updatedAt = null;
+
+    #[ORM\Column]
+    private ?bool $completed = false;
 
     public function getId(): ?int
     {
@@ -98,6 +106,18 @@ class Task
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function isCompleted(): ?bool
+    {
+        return $this->completed;
+    }
+
+    public function setCompleted(bool $completed): static
+    {
+        $this->completed = $completed;
 
         return $this;
     }

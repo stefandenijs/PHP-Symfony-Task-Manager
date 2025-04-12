@@ -3,6 +3,7 @@ services:
 ###> doctrine/doctrine-bundle ###
   database:
     container_name: task-db
+    restart: always
     image: postgres:${POSTGRES_VERSION:-16}-alpine
     env_file:
       - .env
