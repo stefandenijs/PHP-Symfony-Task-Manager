@@ -68,4 +68,28 @@ final class TaskControllerTest extends WebTestCase
         $this->assertEquals($task->getTitle(), $newTaskRes->getTitle());
         $this->assertEquals($task->getDescription(), $newTaskRes->getDescription());
     }
+
+    public function testUpdateTask(): void
+    {
+        // Arrange
+        $client = TaskControllerTest::createClient();
+        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
+
+        $updatedTask = new Task();
+        $id = 11;
+        $updatedTask->setTitle('Task 11 new');
+        $updatedTask->setDescription('Task description 11 new');
+
+        // Act
+        $requestUpdatedTask = $serializer->serialize($updatedTask, 'json');
+        $client->request('PUT', "/task/$id", content: $requestUpdatedTask);
+
+        // Assert
+        $updatedTaskRes = $taskRepository->findOneBy(['title' => 'Task 11 new']);
+        $this->assertResponseRedirects("/task/$id");
+        $this->assertNotNull($updatedTaskRes);
+        $this->assertEquals($updatedTask->getTitle(), $updatedTaskRes->getTitle());
+        $this->assertEquals($updatedTask->getDescription(), $updatedTaskRes->getDescription());
+    }
 }
