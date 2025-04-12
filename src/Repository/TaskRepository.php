@@ -17,7 +17,7 @@ class TaskRepository extends ServiceEntityRepository
         parent::__construct($registry, Task::class);
     }
 
-    public function create(Task $task): void
+    public function createOrUpdate(Task $task): void
     {
         $em = $this->getEntityManager();
         $em->persist($task);
@@ -28,13 +28,6 @@ class TaskRepository extends ServiceEntityRepository
     {
         $em = $this->getEntityManager();
         $em->remove($task);
-        $em->flush();
-    }
-
-    public function update(Task $task): void
-    {
-        $em = $this->getEntityManager();
-        $em->persist($task);
         $em->flush();
     }
 }

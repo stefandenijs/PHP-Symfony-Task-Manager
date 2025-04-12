@@ -3,8 +3,8 @@
 The following tool is an example backend for a task managing system. The basic concept is that a user can create and manage tasks to efficiently plan their days.
 
 ## Prerequisites
-
-PHP installed, for this project I used XAMPP for PHP and other plugins.
+* Symfony 7.2
+* PHP 8.2 installed, for this project I used XAMPP for PHP and other plugins.
 
 The following modules were active during the development of this backend:
 ````
