@@ -23,6 +23,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180)]
     #[Assert\Email(message: 'Invalid email address')]
+    #[Assert\NotBlank(message: 'Email address is required')]
     private ?string $email = null;
 
     /**
@@ -40,7 +41,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\PasswordStrength(
         ['minScore' => PasswordStrength::STRENGTH_MEDIUM]
     )]
-    private ?string $rawPassword = null;
+    #[Assert\NotBlank(message: 'Password is required')]
+    private ?string $plainPassword = null;
 
     /**
      * @var Collection<int, Task>
@@ -49,6 +51,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $tasks;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Username is required')]
     private ?string $username = null;
 
     public function __construct()
@@ -66,7 +69,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function setEmail(string $email): static
+    public function setEmail(?string $email): static
     {
         $this->email = $email;
 
@@ -166,21 +169,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->username;
     }
 
-    public function setUsername(string $username): static
+    public function setUsername(?string $username): static
     {
         $this->username = $username;
 
         return $this;
     }
 
-    public function getRawPassword(): ?string
+    public function getPlainPassword(): ?string
     {
-        return $this->rawPassword;
+        return $this->plainPassword;
     }
 
-    public function setRawPassword(string $rawPassword): static
+    public function setPlainPassword(?string $plainPassword): static
     {
-        $this->rawPassword = $rawPassword;
+        $this->plainPassword = $plainPassword;
 
         return $this;
     }

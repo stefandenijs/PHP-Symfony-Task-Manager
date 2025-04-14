@@ -19,26 +19,26 @@ final class AuthController extends AbstractController
     public function register(Request $request, UserRepository $userRepository, ValidatorService $validatorService, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        $password = $data['password'];
-        $email = $data['email'];
-        $username = $data['username'];
+        $email = $data['email'] ?? null;
+        $username = $data['username'] ?? null;
+        $password = $data['password'] ?? null;
+
+        $user = new User();
+        $user->setEmail($email);
+        $user->setUsername($username);
+        $user->setPlainPassword($password);
+
+        $validationResponse = $validatorService->validate($user, null, null);
+        if ($validationResponse !== null) {
+            return $validationResponse;
+        }
 
         $userExists = $userRepository->findOneBy(['email' => $email]);
         if ($userExists) {
             return new JsonResponse(["error" => "Email already in use"], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $user = new User();
-        $user->setEmail($email);
-        $user->setUsername($username);
-        $user->setRawPassword($password);
-
-        $validationResponse = $validatorService->validate($user);
-        if ($validationResponse !== null) {
-            return $validationResponse;
-        }
-
-        $user->setPassword($passwordHasher->hashPassword($user, $user->getRawPassword()));
+        $user->setPassword($passwordHasher->hashPassword($user, $user->getPlainPassword()));
         $user->setRoles(['ROLE_USER']);
 
         $userRepository->create($user);
@@ -46,6 +46,7 @@ final class AuthController extends AbstractController
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
 
+    // TODO: Change this to not be overwritten by the JWT package to be able to send more information.
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
