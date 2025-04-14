@@ -8,33 +8,39 @@ use App\Service\ValidatorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
+
 final class TaskController extends AbstractController
 {
     #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]
     public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
     {
-        $tasks = $taskRepository->findAll();
+        $user = $this->getUser();
 
-        $response = $serializer->serialize($tasks, 'json');
+        $tasks = $taskRepository->findBy(['owner' => $user->getId()]);
+        $response = $serializer->serialize($tasks, 'json', ['groups' => ['task', 'task_owner']]);
 
-        return JsonResponse::fromJsonString($response, status: 200);
+        return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
 
     #[Route('/api/task/{id}', name: 'api_task_get', methods: ['GET'])]
     public function getTask(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
     {
+        $user = $this->getUser();
         $task = $taskRepository->find($id);
 
         if (!$task) {
-            return new JsonResponse(["error" => "Task not found"], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
         }
 
-        $response = $serializer->serialize($task, 'json');
+        if ($task->getOwner()->getId() !== $user->getId()) {
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_UNAUTHORIZED);
+        }
 
+        $response = $serializer->serialize($task, 'json', ['groups' => ['task', 'task_owner']]);
 
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
@@ -42,6 +48,8 @@ final class TaskController extends AbstractController
     #[Route('/api/task', name: 'api_task_create', methods: ['POST'])]
     public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): Response|JsonResponse|RedirectResponse
     {
+        $user = $this->getUser();
+
         $title = $request->getPayload()->get('title');
         $description = $request->getPayload()->get('description');
         $deadline = $request->getPayload()->get('deadline');
@@ -51,6 +59,7 @@ final class TaskController extends AbstractController
         $task->setDescription($description);
         $task->setDeadline($deadline);
         $task->setCreatedAt(new \DateTimeImmutable('now'));
+        $task->setOwner($user);
 
         $validationResponse = $validatorService->validate($task, null, ['task']);
         if ($validationResponse !== null) {
@@ -59,28 +68,40 @@ final class TaskController extends AbstractController
 
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirect("/task/{$task->getId()}");
+        return $this->redirect("/api/task/{$task->getId()}");
     }
 
     #[Route('/api/task/{id}', name: 'api_task_delete', methods: ['DELETE'])]
     public function deleteTask(TaskRepository $taskRepository, int $id): JsonResponse
     {
+        $user = $this->getUser();
+
         $task = $taskRepository->find($id);
         if (!$task) {
-            return new JsonResponse(["error" => "Task not found"], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($task->getOwner()->getId() !== $user->getId()) {
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_UNAUTHORIZED);
         }
 
         $taskRepository->delete($task);
 
-        return new JsonResponse(["success" => "Task deleted successfully"], Response::HTTP_OK);
+        return new JsonResponse(['success' => 'Task deleted successfully'], Response::HTTP_OK);
     }
 
     #[Route('/api/task/{id}', name: 'api_task_update', methods: ['PUT'])]
     public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): Response|RedirectResponse
     {
+        $user = $this->getUser();
+
         $task = $taskRepository->find($id);
         if (!$task) {
-            return new JsonResponse(["error" => "Task not found"], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($task->getOwner()->getId() !== $user->getId()) {
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_UNAUTHORIZED);
         }
 
         $title = $request->getPayload()->get('title');
@@ -97,7 +118,7 @@ final class TaskController extends AbstractController
             $task->setDeadline(new \DateTime($deadline));
         }
 
-        $validationResponse = $validatorService->validate($task, null,  ['task']);
+        $validationResponse = $validatorService->validate($task, null, ['task']);
         if ($validationResponse !== null) {
             return $validationResponse;
         }
@@ -105,7 +126,7 @@ final class TaskController extends AbstractController
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirect("/task/{$task->getId()}");
+        return $this->redirect("/api/task/{$task->getId()}");
     }
 
 }

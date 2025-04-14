@@ -5,8 +5,8 @@ namespace App\Entity;
 use App\Repository\TaskRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use http\Message;
 use Symfony\Component\Serializer\Annotation\Ignore;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
@@ -20,19 +20,23 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[groups(['task'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'A valid task title is required', groups: ['task'])]
+    #[groups(['task'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[groups(['task'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DATETIMETZ_MUTABLE, nullable: true)]
     #[Assert\Valid] // Only assert the type if not null.
         // TODO: Fix this at some point that it allows to include timezone data
     #[Assert\Type(Types::DATETIME_MUTABLE, message: 'A valid task deadline is required')]
+    #[groups(['task'])]
     private ?\DateTimeInterface $deadline = null;
 
     #[ORM\Column]
@@ -43,10 +47,12 @@ class Task
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column]
+    #[groups(['task'])]
     private ?bool $completed = false;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['task', 'task_owner'])]
     private ?User $owner = null;
 
     public function getId(): ?int
