@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\SerializerInterface;
 final class TaskController extends AbstractController
 {
-    #[Route('/task', name: 'app_task', methods: ['GET', 'HEAD'])]
+    #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]
     public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $tasks = $taskRepository->findAll();
@@ -24,7 +24,7 @@ final class TaskController extends AbstractController
         return JsonResponse::fromJsonString($response, status: 200);
     }
 
-    #[Route('/task/{id}', name: 'app_task_show', methods: ['GET'])]
+    #[Route('/api/task/{id}', name: 'api_task_get', methods: ['GET'])]
     public function getTask(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
     {
         $task = $taskRepository->find($id);
@@ -39,7 +39,7 @@ final class TaskController extends AbstractController
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
 
-    #[Route('/task', name: 'app_task_create', methods: ['POST'])]
+    #[Route('/api/task', name: 'api_task_create', methods: ['POST'])]
     public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): Response|JsonResponse|RedirectResponse
     {
         $title = $request->getPayload()->get('title');
@@ -62,7 +62,7 @@ final class TaskController extends AbstractController
         return $this->redirect("/task/{$task->getId()}");
     }
 
-    #[Route('/task/{id}', name: 'app_task_delete', methods: ['DELETE'])]
+    #[Route('/api/task/{id}', name: 'api_task_delete', methods: ['DELETE'])]
     public function deleteTask(TaskRepository $taskRepository, int $id): JsonResponse
     {
         $task = $taskRepository->find($id);
@@ -75,7 +75,7 @@ final class TaskController extends AbstractController
         return new JsonResponse(["success" => "Task deleted successfully"], Response::HTTP_OK);
     }
 
-    #[Route('/task/{id}', name: 'app_task_update', methods: ['PUT'])]
+    #[Route('/api/task/{id}', name: 'api_task_update', methods: ['PUT'])]
     public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): Response|RedirectResponse
     {
         $task = $taskRepository->find($id);
