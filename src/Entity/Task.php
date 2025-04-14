@@ -45,6 +45,10 @@ class Task
     #[ORM\Column]
     private ?bool $completed = false;
 
+    #[ORM\ManyToOne(inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $owner = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -118,6 +122,18 @@ class Task
     public function setCompleted(bool $completed): static
     {
         $this->completed = $completed;
+
+        return $this;
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(?User $owner): static
+    {
+        $this->owner = $owner;
 
         return $this;
     }
