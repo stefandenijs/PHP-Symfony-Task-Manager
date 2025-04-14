@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\ValidatorService;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final class AuthController extends AbstractController
 {
@@ -45,15 +45,28 @@ final class AuthController extends AbstractController
 
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
-
-    // TODO: Change this to not be overwritten by the JWT package to be able to send more information.
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
-    public function login(#[CurrentUser] ?User $user): JsonResponse
+    public function login(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
     {
-        if ($user === null) {
-            return new JsonResponse(['message' => 'Missing credentials'], Response::HTTP_UNAUTHORIZED);
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+
+        if (empty($email) || empty($password)) {
+            return new JsonResponse(["error" => "Email and password are required"], Response::HTTP_BAD_REQUEST);
         }
 
-        return new JsonResponse(['message' => 'You are logged in', 'user' => ['username' => $user->getUsername(), 'email' => $user->getUserIdentifier()]], Response::HTTP_OK);
+        $user = $userRepository->findOneBy(['email' => $email]);
+
+        if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
+            return new JsonResponse(["error" => "Invalid credentials"], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $token = $JWTTokenManager->create($user);
+
+        return new JsonResponse(['token' => $token, 'message' => 'User logged in successfully', 'user' => [
+            'username' => $user->getProfileUsername(),
+            'email' => $user->getUsername(),
+        ]], Response::HTTP_OK);
     }
 }
