@@ -4,6 +4,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Task;
 use App\Repository\TaskRepository;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -12,10 +13,10 @@ final class TaskControllerTest extends WebTestCase
     public function testGetTasks(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
 
         // Act
-        $client->request('GET', '/task');
+        $client->request('GET', '/api/task');
         $tasks = $client->getResponse()->getContent();
         $tasks = json_decode($tasks, true);
 
@@ -26,14 +27,28 @@ final class TaskControllerTest extends WebTestCase
         assert($tasks[0]["description"] === 'Task description 1');
     }
 
+    public function setUpClient(): KernelBrowser
+    {
+        $client = TaskControllerTest::createClient();
+        $client->request('POST', '/api/login', content: json_encode(['email' => 'test@test.com', 'password' => 'testUser12345']));
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $token = $data['token'];
+
+
+        $client->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $token));
+
+        return $client;
+    }
+
     public function testGetTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $id = 1;
 
         // Act
-        $client->request('GET', "/task/" . $id);
+        $client->request('GET', "/api/task/" . $id);
         $task = $client->getResponse()->getContent();
         $task = json_decode($task, true);
 
@@ -47,11 +62,11 @@ final class TaskControllerTest extends WebTestCase
     public function testGetMissingTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $id = 999;
 
         // Act
-        $client->request('GET', "/task/$id");
+        $client->request('GET', "/api/task/$id");
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -62,7 +77,7 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
 
@@ -72,10 +87,10 @@ final class TaskControllerTest extends WebTestCase
 
         // Act
         $newTask = $serializer->serialize($task, 'json');
-        $client->request('POST', '/task', content: $newTask);
+        $client->request('POST', '/api/task', content: $newTask);
 
         // Assert
-        $this->assertResponseRedirects('/task/11');
+        $this->assertResponseRedirects('/api/task/11');
         $newTaskRes = $taskRepository->findOneBy(['title' => 'Task 11']);
         $this->assertNotNull($newTaskRes);
         $this->assertEquals($task->getTitle(), $newTaskRes->getTitle());
@@ -85,26 +100,26 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateTaskWithMissingTitle(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $task = new Task();
         $task->setDescription('Task description 11');
 
         // Act
         $newTask = $serializer->serialize($task, 'json');
-        $client->request('POST', '/task', content: $newTask);
+        $client->request('POST', '/api/task', content: $newTask);
 
         // Assert
         $response = json_decode($client->getResponse()->getContent(), true);
         $this->assertResponseStatusCodeSame(400);
-        assert($response['field'] === 'title');
-        assert($response['message'] === 'A valid task title is required');
+        assert($response[0]['field'] === 'title');
+        assert($response[0]['message'] === 'A valid task title is required');
     }
 
     public function testUpdateTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
 
@@ -115,11 +130,11 @@ final class TaskControllerTest extends WebTestCase
 
         // Act
         $requestUpdatedTask = $serializer->serialize($updatedTask, 'json');
-        $client->request('PUT', "/task/$id", content: $requestUpdatedTask);
+        $client->request('PUT', "/api/task/$id", content: $requestUpdatedTask);
 
         // Assert
         $updatedTaskRes = $taskRepository->findOneBy(['title' => 'Task 11 new']);
-        $this->assertResponseRedirects("/task/$id");
+        $this->assertResponseRedirects("/api/task/$id");
         $this->assertNotNull($updatedTaskRes);
         $this->assertEquals($updatedTask->getTitle(), $updatedTaskRes->getTitle());
         $this->assertEquals($updatedTask->getDescription(), $updatedTaskRes->getDescription());
@@ -128,11 +143,11 @@ final class TaskControllerTest extends WebTestCase
     public function testUpdateMissingTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $id = 999;
 
         // Act
-        $client->request('PUT', "/task/$id");
+        $client->request('PUT', "/api/task/$id");
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -143,11 +158,11 @@ final class TaskControllerTest extends WebTestCase
     public function testDeleteTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $id = 11;
 
         // Act
-        $client->request('DELETE', "/task/$id");
+        $client->request('DELETE', "/api/task/$id");
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -159,11 +174,11 @@ final class TaskControllerTest extends WebTestCase
     public function testDeleteMissingTask(): void
     {
         // Arrange
-        $client = TaskControllerTest::createClient();
+        $client = $this->setUpClient();
         $id = 999;
 
         // Act
-        $client->request('DELETE', "/task/$id");
+        $client->request('DELETE', "/api/task/$id");
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert

@@ -29,10 +29,10 @@ class ValidatorServiceTest extends KernelTestCase
         $this->assertNotNull($result);
         $this->assertEquals(400, $result->getStatusCode());
         $decodedResult = json_decode($result->getContent(), true);
-        $this->assertArrayHasKey("field", $decodedResult);
-        $this->assertArrayHasKey("message", $decodedResult);
-        $this->assertArrayHasKey("code", $decodedResult);
-        $this->assertStringContainsString("title", $decodedResult["field"]);
-        $this->assertStringContainsString("A valid task title is required", $decodedResult["message"]);
+        $this->assertArrayHasKey("field", $decodedResult[0]);
+        $this->assertArrayHasKey("message", $decodedResult[0]);
+        $this->assertArrayHasKey("code", $decodedResult[0]);
+        $this->assertStringContainsString("title", $decodedResult[0]["field"]);
+        $this->assertStringContainsString("A valid task title is required", $decodedResult[0]["message"]);
     }
 }
