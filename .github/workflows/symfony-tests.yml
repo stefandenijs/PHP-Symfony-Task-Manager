@@ -20,6 +20,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=16&charset=utf8
       KERNEL_CLASS: App\Kernel
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+      JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
     services:
       postgres:
         image: postgres:16-alpine
