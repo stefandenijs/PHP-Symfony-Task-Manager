@@ -12,10 +12,23 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 final class AuthController extends AbstractController
 {
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
+    #[OA\RequestBody(
+        description: 'Data used to register',
+        required: true,
+        content: new OA\JsonContent(
+            type: 'object',
+            example: [
+                'email' => 'email',
+                'password' => 'password',
+                'username' => 'username',
+            ]
+        )
+    )]
     public function register(Request $request, UserRepository $userRepository, ValidatorService $validatorService, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -46,6 +59,17 @@ final class AuthController extends AbstractController
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    #[OA\RequestBody(
+        description: 'Credentials used to login',
+        required: true,
+        content: new OA\JsonContent(
+            type: 'object',
+            example: [
+                'email' => 'email',
+                'password' => 'password',
+            ]
+        )
+    )]
     public function login(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);

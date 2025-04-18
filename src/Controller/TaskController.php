@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Task;
 use App\Repository\TaskRepository;
 use App\Service\ValidatorService;
+use Nelmio\ApiDocBundle\Attribute\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -16,6 +17,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 final class TaskController extends AbstractController
 {
     #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]
+    #[Security(name: 'Bearer')]
     public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $user = $this->getUser();
