@@ -53,13 +53,18 @@ final class AuthController extends AbstractController
         $password = $data['password'] ?? null;
 
         if (empty($email) || empty($password)) {
-            return new JsonResponse(["error" => "Email and password are required"], Response::HTTP_BAD_REQUEST);
+            if (empty($email)) {
+                return new JsonResponse(['error' => 'email' , "message" => "Email is required"], Response::HTTP_BAD_REQUEST);
+            }
+            if (empty($password)) {
+                return new JsonResponse(["error" => "password" , "message" => "Password is required"], Response::HTTP_BAD_REQUEST);
+            }
         }
 
         $user = $userRepository->findOneBy(['email' => $email]);
 
         if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
-            return new JsonResponse(["error" => "Invalid credentials"], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(["error" => "authentication", "message" => "Invalid credentials"], Response::HTTP_UNAUTHORIZED);
         }
 
         $token = $JWTTokenManager->create($user);

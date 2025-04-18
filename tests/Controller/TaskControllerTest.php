@@ -10,6 +10,20 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 final class TaskControllerTest extends WebTestCase
 {
+    protected function setUpClient(): KernelBrowser
+    {
+        $client = TaskControllerTest::createClient();
+        $client->request('POST', '/api/login', content: json_encode(['email' => 'test@test.com', 'password' => 'testUser12345']));
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $token = $data['token'];
+
+
+        $client->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $token));
+
+        return $client;
+    }
+
     public function testGetTasks(): void
     {
         // Arrange
@@ -25,20 +39,6 @@ final class TaskControllerTest extends WebTestCase
         $this->assertCount(10, $tasks);
         assert($tasks[0]["title"] === 'Task 1');
         assert($tasks[0]["description"] === 'Task description 1');
-    }
-
-    public function setUpClient(): KernelBrowser
-    {
-        $client = TaskControllerTest::createClient();
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'test@test.com', 'password' => 'testUser12345']));
-
-        $data = json_decode($client->getResponse()->getContent(), true);
-        $token = $data['token'];
-
-
-        $client->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $token));
-
-        return $client;
     }
 
     public function testGetTask(): void
