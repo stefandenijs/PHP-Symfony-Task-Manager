@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://symfony:symfony@localhost:5432/symfony?serverVersion=16&charset=utf8
+      KERNEL_CLASS: App\Kernel
     services:
       postgres:
         image: postgres:16-alpine
