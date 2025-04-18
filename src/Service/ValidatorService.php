@@ -29,7 +29,7 @@ class ValidatorService
         if (count($errors) > 0) {
             $errorList = [];
             foreach ($errors as $violation) {
-                $errorList = [
+                $errorList[] = [
                     'field' => $violation->getPropertyPath(),
                     'message' => $violation->getMessage(),
                     'code' => $violation->getCode(),

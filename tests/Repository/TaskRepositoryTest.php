@@ -4,30 +4,36 @@ namespace App\Tests\Repository;
 
 use App\Entity\Task;
 use App\Repository\TaskRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class TaskRepositoryTest extends KernelTestCase
 {
-    private TaskRepository $repository;
+    private TaskRepository $taskRepository;
+    private UserRepository $userRepository;
 
     public function setUp(): void
     {
         self::bootKernel();
 
-        $this->repository = self::getContainer()->get(TaskRepository::class);
+        $this->taskRepository = self::getContainer()->get(TaskRepository::class);
+        $this->userRepository = self::getContainer()->get(UserRepository::class);
+
     }
 
     public function testCreate(): Task
     {
         // Arrange
+        $user = $this->userRepository->findOneByEmail("test@test.com");
         $task = new Task();
         $task->setTitle("Create Task");
         $task->setDescription("Create Task");
+        $task->setOwner($user);
 
         // Act
-        $this->repository->createOrUpdate($task);
-        $newTask = $this->repository->find($task->getId());
+        $this->taskRepository->createOrUpdate($task);
+        $newTask = $this->taskRepository->find($task->getId());
 
         // Assert
         $this->assertnotnull($newTask);
@@ -44,13 +50,13 @@ class TaskRepositoryTest extends KernelTestCase
     public function testUpdate(Task $task): Task
     {
         // Arrange
-        $taskToUpdate = $this->repository->find($task->getId());
+        $taskToUpdate = $this->taskRepository->find($task->getId());
         $taskToUpdate->setTitle("Update Task");
         $taskToUpdate->setDescription("Update Task");
 
         // Act
-        $this->repository->createOrUpdate($taskToUpdate);
-        $updatedTask = $this->repository->find($task->getId());
+        $this->taskRepository->createOrUpdate($taskToUpdate);
+        $updatedTask = $this->taskRepository->find($task->getId());
 
         // Assert
         $this->assertEquals($taskToUpdate, $updatedTask);
@@ -65,10 +71,10 @@ class TaskRepositoryTest extends KernelTestCase
      */
     public function testDelete(Task $task): void
     {
-        $taskToDelete = $this->repository->find($task->getId());
-        $this->repository->delete($taskToDelete);
+        $taskToDelete = $this->taskRepository->find($task->getId());
+        $this->taskRepository->delete($taskToDelete);
 
-        $deletedTask = $this->repository->find($task->getId());
+        $deletedTask = $this->taskRepository->find($task->getId());
 
         $this->assertNull($deletedTask);
     }
