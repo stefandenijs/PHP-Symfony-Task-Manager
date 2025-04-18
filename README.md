@@ -41,6 +41,7 @@ readline
 Reflection
 session
 SimpleXML
+sodium
 SPL
 standard
 tokenizer
