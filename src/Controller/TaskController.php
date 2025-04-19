@@ -20,7 +20,7 @@ final class TaskController extends AbstractController
     #[Route('/api/task', name: 'api_task', methods: ['GET'])]
     #[OA\Get(
         path: '/api/task',
-        summary: 'Get all tasks from a User',
+        summary: 'Get all tasks from an user',
         tags: ['Task']
     )]
     public function getTasks(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer): JsonResponse
