@@ -31,6 +31,10 @@ final class UserController extends AbstractController
     {
         $user = $userRepository->find($id);
 
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
         $response = $serializer->serialize($user, 'json', ['groups' => ['user']]);
 
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
