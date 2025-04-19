@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Entity\Task;
 use App\Repository\TaskRepository;
 use App\Service\ValidatorService;
-use Nelmio\ApiDocBundle\Attribute\Security;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
