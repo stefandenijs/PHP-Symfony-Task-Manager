@@ -4,30 +4,34 @@ namespace App\Tests\Controller;
 
 use App\Entity\Task;
 use App\Repository\TaskRepository;
+use App\Repository\TaskRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Serializer\SerializerInterface;
 
 final class TaskControllerTest extends WebTestCase
 {
-    protected function setUpClient(): KernelBrowser
-    {
-        $client = TaskControllerTest::createClient();
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'test@test.com', 'password' => 'testUser12345']));
+    private KernelBrowser $client;
+    private TaskRepositoryInterface $taskRepository;
+    private SerializerInterface $serializer;
 
-        $data = json_decode($client->getResponse()->getContent(), true);
+    public function setUp(): void
+    {
+        $this->client = TaskControllerTest::createClient();
+        $this->taskRepository = TaskControllerTest::getContainer()->get(TaskRepositoryInterface::class);
+        $this->serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $this->client->request('POST', '/api/login', content: json_encode(['email' => 'test@test.com', 'password' => 'testUser12345']));
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
         $token = $data['token'];
 
-
-        $client->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $token));
-
-        return $client;
+        $this->client->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $token));
     }
 
     public function testGetTasks(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
 
         // Act
         $client->request('GET', '/api/task');
@@ -44,7 +48,7 @@ final class TaskControllerTest extends WebTestCase
     public function testGetTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 1;
 
         // Act
@@ -62,7 +66,7 @@ final class TaskControllerTest extends WebTestCase
     public function testGetMissingTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 999;
 
         // Act
@@ -77,7 +81,7 @@ final class TaskControllerTest extends WebTestCase
     public function testGetTaskNotOwner(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 20;
 
         // Act
@@ -93,9 +97,9 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
-        $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
+        $taskRepository = $this->taskRepository;
 
         $task = new Task();
         $task->setTitle('Task 21');
@@ -116,9 +120,9 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateSubTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
-        $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
+        $taskRepository = $this->taskRepository;
 
         $task = new Task();
         $task->setTitle('SubTask 22');
@@ -140,8 +144,8 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateTaskWithNullParent(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
 
         $task = new Task();
         $task->setTitle('Task 22');
@@ -168,8 +172,8 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateTaskWithNoAccessToParent(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
 
         $task = new Task();
         $task->setTitle('Task 22');
@@ -177,7 +181,7 @@ final class TaskControllerTest extends WebTestCase
 
         $context = [
             'circular_reference_handler' => function ($object) {
-            return method_exists($object, 'getId') ? $object->getId() : null;
+                return method_exists($object, 'getId') ? $object->getId() : null;
             },
             'groups' => ['task:create'],
         ];
@@ -195,8 +199,8 @@ final class TaskControllerTest extends WebTestCase
     public function testCreateTaskWithMissingTitle(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
         $task = new Task();
         $task->setDescription('Task description 21');
 
@@ -214,9 +218,9 @@ final class TaskControllerTest extends WebTestCase
     public function testUpdateTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
-        $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
+        $taskRepository = $this->taskRepository;
 
         $updatedTask = new Task();
         $id = 21;
@@ -238,8 +242,8 @@ final class TaskControllerTest extends WebTestCase
     public function testUpdateTaskNotOwner(): void
     {
         // Arrange
-        $client = $this->setUpClient();
-        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $client = $this->client;
+        $serializer = $this->serializer;
         $updatedTask = new Task();
         $id = 20;
         $updatedTask->setTitle('Task 20 new');
@@ -258,7 +262,7 @@ final class TaskControllerTest extends WebTestCase
     public function testUpdateMissingTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 999;
 
         // Act
@@ -273,7 +277,7 @@ final class TaskControllerTest extends WebTestCase
     public function testDeleteTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 21;
 
         // Act
@@ -289,7 +293,7 @@ final class TaskControllerTest extends WebTestCase
     public function testDeleteTaskNotOwner(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 20;
 
         // Act
@@ -305,7 +309,7 @@ final class TaskControllerTest extends WebTestCase
     public function testDeleteMissingTask(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $client = $this->client;
         $id = 999;
 
         // Act
