@@ -20,12 +20,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['task', 'task_owner'])]
+    #[Groups(['task', 'task_owner', 'user'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
     #[Assert\Email(message: 'Invalid email address')]
     #[Assert\NotBlank(message: 'Email address is required')]
+    #[Groups(['user'])]
     private ?string $email = null;
 
     /**
@@ -54,6 +55,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Username is required')]
+    #[Groups(['user'])]
     private ?string $username = null;
 
     public function __construct()

@@ -59,7 +59,7 @@ final class TaskController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_FORBIDDEN);
         }
 
-        $response = $serializer->serialize($task, 'json', ['groups' => ['task', 'task_owner']]);
+        $response = $serializer->serialize($task, 'json', ['groups' => ['task_single', 'task_owner']]);
 
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
