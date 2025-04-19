@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
+// TODO: Add response documentation.
 final class TaskController extends AbstractController
 {
     #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]

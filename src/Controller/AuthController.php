@@ -14,6 +14,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 
+// TODO: Add response documentation.
 final class AuthController extends AbstractController
 {
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
