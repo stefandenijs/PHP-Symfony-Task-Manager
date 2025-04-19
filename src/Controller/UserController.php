@@ -82,7 +82,10 @@ final class UserController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
         $username = $data['username'] ?? null;
-        $userToUpdate->setUsername($username);
+
+        if (!empty($username)) {
+            $userToUpdate->setUsername($username);
+        }
 
         $userRepository->createOrUpdate($userToUpdate);
 
