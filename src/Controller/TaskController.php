@@ -6,7 +6,6 @@ use App\Entity\Task;
 use App\Repository\TaskRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
 use OpenApi\Attributes as OA;
-use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -108,7 +107,7 @@ final class TaskController extends AbstractController
         $task = new Task();
         $task->setTitle($title);
         $task->setDescription($description);
-        $task->setDeadline($deadline);
+        $task->setDeadline(new \DateTime($deadline));
         $task->setCreatedAt(new \DateTimeImmutable('now'));
         $task->setOwner($user);
 
@@ -130,7 +129,7 @@ final class TaskController extends AbstractController
 
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirect("/api/task/{$task->getId()}");
+        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], 303);
     }
 
     #[Route('/api/task/{id}', name: 'api_task_delete', methods: ['DELETE'])]
@@ -225,7 +224,7 @@ final class TaskController extends AbstractController
             $task->setDeadline(new \DateTime($deadline));
         }
         if (!empty($complete)) {
-            $task->setComplete($complete);
+            $task->setCompleted($complete);
         }
 
         $validationResponse = $validatorService->validate($task, null, ['task']);
@@ -236,7 +235,7 @@ final class TaskController extends AbstractController
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirect("/api/task/{$task->getId()}");
+        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], 303);
     }
 
 }
