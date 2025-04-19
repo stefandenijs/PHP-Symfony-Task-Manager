@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Task;
 use App\Repository\TaskRepository;
 use App\Service\ValidatorService;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -13,9 +14,15 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
+// TODO: Add response documentation.
 final class TaskController extends AbstractController
 {
     #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]
+    #[OA\Get(
+        path: '/api/task',
+        summary: 'Get all tasks from a User',
+        tags: ['Task']
+    )]
     public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $user = $this->getUser();
@@ -27,6 +34,18 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/api/task/{id}', name: 'api_task_get', methods: ['GET'])]
+    #[OA\Get(
+        path: '/api/task/{id}',
+        summary: 'Get a task by ID',
+        tags: ['Task']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'ID of the task',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer')
+    )]
     public function getTask(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
     {
         $user = $this->getUser();
@@ -46,6 +65,24 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/api/task', name: 'api_task_create', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/task',
+        summary: 'Creates a task',
+        tags: ['Task']
+    )]
+    #[OA\RequestBody(
+        description: 'Creates a task',
+        required: true,
+        content: new OA\JsonContent(
+            required: ['title'],
+            type: 'object',
+            example: [
+                'title' => 'title',
+                'description' => 'description',
+                'deadline' => 'deadline',
+            ]
+        )
+    )]
     public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): Response|JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
@@ -72,6 +109,18 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/api/task/{id}', name: 'api_task_delete', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: '/api/task/{id}',
+        summary: 'Deletes a task by ID',
+        tags: ['Task']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'ID of the task',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer')
+    )]
     public function deleteTask(TaskRepository $taskRepository, int $id): JsonResponse
     {
         $user = $this->getUser();
@@ -91,6 +140,32 @@ final class TaskController extends AbstractController
     }
 
     #[Route('/api/task/{id}', name: 'api_task_update', methods: ['PUT'])]
+    #[OA\Put(
+        path: '/api/task/{id}',
+        summary: 'Updates a task by ID',
+        tags: ['Task']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'ID of the task',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\RequestBody(
+        description: 'Update a task',
+        required: true,
+        content: new OA\JsonContent(
+            required: ['title'],
+            type: 'object',
+            example: [
+                'title' => 'title',
+                'description' => 'description',
+                'deadline' => 'deadline',
+                'completed' => 'completed',
+            ]
+        )
+    )]
     public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): Response|RedirectResponse
     {
         $user = $this->getUser();
@@ -107,15 +182,19 @@ final class TaskController extends AbstractController
         $title = $request->getPayload()->get('title');
         $description = $request->getPayload()->get('description');
         $deadline = $request->getPayload()->get('deadline');
+        $complete = $request->getPayload()->get('completed');
 
-        if (!is_null($title) && $title !== '') {
+        if (!empty($title)) {
             $task->setTitle($title);
         }
-        if (!is_null($description) && $description !== '') {
+        if (!empty($description)) {
             $task->setDescription($description);
         }
-        if (!is_null($deadline) && $deadline !== '') {
+        if (!empty($deadline)) {
             $task->setDeadline(new \DateTime($deadline));
+        }
+        if (!empty($complete)) {
+            $task->setComplete($complete);
         }
 
         $validationResponse = $validatorService->validate($task, null, ['task']);
