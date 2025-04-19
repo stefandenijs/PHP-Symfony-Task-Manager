@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 // TODO: Add response documentation.
 final class TaskController extends AbstractController
 {
-    #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]
+    #[Route('/api/task', name: 'api_task', methods: ['GET'])]
     #[OA\Get(
         path: '/api/task',
         summary: 'Get all tasks from a User',
@@ -72,7 +72,7 @@ final class TaskController extends AbstractController
     )]
     #[OA\QueryParameter(
         name: 'parent',
-        description: 'ID of the task parent',
+        description: 'ID of the task parent, this creates a subtask',
         in: 'query',
         required: false,
         schema: new OA\Schema(type: 'integer')

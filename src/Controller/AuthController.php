@@ -18,6 +18,12 @@ use OpenApi\Attributes as OA;
 final class AuthController extends AbstractController
 {
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/register',
+        description: 'Register an account',
+        summary: 'Register an account',
+        tags: ['Auth'],
+    )]
     #[OA\RequestBody(
         description: 'Data used to register',
         required: true,
@@ -60,6 +66,12 @@ final class AuthController extends AbstractController
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/login',
+        description: 'Log in',
+        summary: 'Log in to your account',
+        tags: ['Auth'],
+    )]
     #[OA\RequestBody(
         description: 'Credentials used to login',
         required: true,
