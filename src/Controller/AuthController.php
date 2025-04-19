@@ -67,7 +67,7 @@ final class AuthController extends AbstractController
         $user->setPassword($passwordHasher->hashPassword($user, $user->getPlainPassword()));
         $user->setRoles(['ROLE_USER']);
 
-        $userRepository->create($user);
+        $userRepository->createOrUpdate($user);
 
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
