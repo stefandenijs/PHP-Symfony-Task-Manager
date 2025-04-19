@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TaskRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Ignore;
@@ -15,6 +17,7 @@ class Task
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable('now');
+        $this->subTasks = new ArrayCollection();
     }
 
     #[ORM\Id]
@@ -25,11 +28,11 @@ class Task
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'A valid task title is required', groups: ['task'])]
-    #[groups(['task'])]
+    #[groups(['task', 'task:create'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[groups(['task'])]
+    #[groups(['task', 'task:create'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DATETIMETZ_MUTABLE, nullable: true)]
@@ -54,6 +57,17 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['task', 'task_owner'])]
     private ?User $owner = null;
+
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'subTasks')]
+    #[Groups(['task', 'task:create'])]
+    private ?self $parent = null;
+
+    /**
+     * @var Collection<int, self>
+     */
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
+    #[Groups(['task'])]
+    private Collection $subTasks;
 
     public function getId(): ?int
     {
@@ -140,6 +154,48 @@ class Task
     public function setOwner(?User $owner): static
     {
         $this->owner = $owner;
+
+        return $this;
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?self $parent): static
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getSubTasks(): Collection
+    {
+        return $this->subTasks;
+    }
+
+    public function addSubTask(self $subTask): static
+    {
+        if (!$this->subTasks->contains($subTask)) {
+            $this->subTasks->add($subTask);
+            $subTask->setParent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSubTask(self $subTask): static
+    {
+        if ($this->subTasks->removeElement($subTask)) {
+            // set the owning side to null (unless already changed)
+            if ($subTask->getParent() === $this) {
+                $subTask->setParent(null);
+            }
+        }
 
         return $this;
     }

@@ -56,7 +56,7 @@ final class TaskController extends AbstractController
         }
 
         if ($task->getOwner()->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_FORBIDDEN);
         }
 
         $response = $serializer->serialize($task, 'json', ['groups' => ['task', 'task_owner']]);
@@ -69,6 +69,13 @@ final class TaskController extends AbstractController
         path: '/api/task',
         summary: 'Creates a task',
         tags: ['Task']
+    )]
+    #[OA\QueryParameter(
+        name: 'parent',
+        description: 'ID of the task parent',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'integer')
     )]
     #[OA\RequestBody(
         description: 'Creates a task',
@@ -83,13 +90,14 @@ final class TaskController extends AbstractController
             ]
         )
     )]
-    public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): Response|JsonResponse|RedirectResponse
+    public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 
         $title = $request->getPayload()->get('title');
         $description = $request->getPayload()->get('description');
         $deadline = $request->getPayload()->get('deadline');
+        $parentId = $request->query->get('parent');
 
         $task = new Task();
         $task->setTitle($title);
@@ -101,6 +109,18 @@ final class TaskController extends AbstractController
         $validationResponse = $validatorService->validate($task, null, ['task']);
         if ($validationResponse !== null) {
             return $validationResponse;
+        }
+
+        if (!empty($parentId))
+        {
+            $parent = $taskRepository->find($parentId);
+            if ($parent === null) {
+                return new JsonResponse(['error' => 'Parent task not found'], Response::HTTP_NOT_FOUND);
+            }
+            if ($parent->getOwner()->getId() !== $user->getId()) {
+                return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
+            }
+            $task->setParent($parent);
         }
 
         $taskRepository->createOrUpdate($task);
@@ -131,7 +151,7 @@ final class TaskController extends AbstractController
         }
 
         if ($task->getOwner()->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
         $taskRepository->delete($task);
@@ -166,7 +186,7 @@ final class TaskController extends AbstractController
             ]
         )
     )]
-    public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): Response|RedirectResponse
+    public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 
@@ -176,7 +196,7 @@ final class TaskController extends AbstractController
         }
 
         if ($task->getOwner()->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
         $title = $request->getPayload()->get('title');
