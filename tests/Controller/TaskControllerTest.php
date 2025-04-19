@@ -137,6 +137,34 @@ final class TaskControllerTest extends WebTestCase
         $this->assertEquals(1, $newTaskRes->getParent()->getId());
     }
 
+    public function testCreateTaskWithNullParent(): void
+    {
+        // Arrange
+        $client = $this->setUpClient();
+        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+
+        $task = new Task();
+        $task->setTitle('Task 22');
+        $task->setDescription('Task description 22');
+
+        $context = [
+            'circular_reference_handler' => function ($object) {
+                return method_exists($object, 'getId') ? $object->getId() : null;
+            },
+            'groups' => ['task:create'],
+        ];
+
+        // Act
+        $newTask = $serializer->serialize($task, 'json', $context);
+        $client->request('POST', '/api/task?parent=999', content: $newTask);
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(404);
+        assert($response['error'] === 'Parent task not found');
+
+    }
+
     public function testCreateTaskWithNoAccessToParent(): void
     {
         // Arrange
