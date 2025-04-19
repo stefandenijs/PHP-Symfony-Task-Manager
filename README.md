@@ -62,4 +62,4 @@ A few steps are required to be able to run the project, this includes setting up
 1. Run inside the root folder: `docker compose up -d`. This will start up the docker container that will host our task manager database via Postgress.
 2. To install required packages: `composer install`
 3. To run the migrations: `php bin/console doctrine:migrations:migrate`
-4. Start the webserver with: `Symfony serve` (Runs locally on `IP:PORT 127.0.0.1:8000`)
+4. Start the webserver with: `symfony serve` (Runs locally on `IP:PORT 127.0.0.1:8000`)

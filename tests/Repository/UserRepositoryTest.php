@@ -32,7 +32,7 @@ class UserRepositoryTest extends KernelTestCase
         $user->setRoles(["ROLE_USER"]);
 
         // Act
-        $this->userRepository->create($user);
+        $this->userRepository->createOrUpdate($user);
         $newUser = $this->userRepository->find($user->getId());
 
         // Assert

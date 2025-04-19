@@ -3,34 +3,46 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
-use App\Service\ValidatorService;
+use App\Repository\UserRepositoryInterface;
+use App\Service\ValidatorServiceInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Attributes as OA;
 
 // TODO: Add response documentation.
 final class AuthController extends AbstractController
 {
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/register',
+        description: 'Register an account',
+        summary: 'Register an account',
+        tags: ['Auth'],
+    )]
     #[OA\RequestBody(
         description: 'Data used to register',
         required: true,
         content: new OA\JsonContent(
+            required: ['email', 'password', 'username'],
+            properties: [
+                new OA\Property(property: 'email', type: 'string'),
+                new OA\Property(property: 'password', type: 'string'),
+                new OA\Property(property: 'username', type: 'string'),
+            ],
             type: 'object',
             example: [
-                'email' => 'email',
-                'password' => 'password',
-                'username' => 'username',
+                'email' => 'mail@example.com',
+                'password' => 'yourPassword123@',
+                'username' => 'Bob',
             ]
         )
     )]
-    public function register(Request $request, UserRepository $userRepository, ValidatorService $validatorService, UserPasswordHasherInterface $passwordHasher): JsonResponse
+    public function register(Request $request, UserRepositoryInterface $userRepository, ValidatorServiceInterface $validatorService, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
@@ -55,23 +67,35 @@ final class AuthController extends AbstractController
         $user->setPassword($passwordHasher->hashPassword($user, $user->getPlainPassword()));
         $user->setRoles(['ROLE_USER']);
 
-        $userRepository->create($user);
+        $userRepository->createOrUpdate($user);
 
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
+
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/login',
+        description: 'Log in',
+        summary: 'Log in to your account',
+        tags: ['Auth'],
+    )]
     #[OA\RequestBody(
         description: 'Credentials used to login',
         required: true,
         content: new OA\JsonContent(
+            required: ['email', 'password'],
+            properties: [
+                new OA\Property(property: 'email', type: 'string'),
+                new OA\Property(property: 'password', type: 'string'),
+            ],
             type: 'object',
             example: [
-                'email' => 'email',
-                'password' => 'password',
+                'email' => 'mail@example.com',
+                'password' => 'yourPassword123@',
             ]
         )
     )]
-    public function login(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
+    public function login(Request $request, UserRepositoryInterface $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
@@ -79,10 +103,10 @@ final class AuthController extends AbstractController
 
         if (empty($email) || empty($password)) {
             if (empty($email)) {
-                return new JsonResponse(['error' => 'email' , "message" => "Email is required"], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(['error' => 'email', "message" => "Email is required"], Response::HTTP_BAD_REQUEST);
             }
             if (empty($password)) {
-                return new JsonResponse(["error" => "password" , "message" => "Password is required"], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(["error" => "password", "message" => "Password is required"], Response::HTTP_BAD_REQUEST);
             }
         }
 

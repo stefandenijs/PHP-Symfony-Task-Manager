@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Constraints\PasswordStrength;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -20,12 +21,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['task', 'task_owner'])]
+    #[Groups(['task', 'task_owner', 'user'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
     #[Assert\Email(message: 'Invalid email address')]
     #[Assert\NotBlank(message: 'Email address is required')]
+    #[Groups(['user'])]
     private ?string $email = null;
 
     /**
@@ -54,6 +56,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Username is required')]
+    #[Groups(['user'])]
     private ?string $username = null;
 
     public function __construct()
@@ -178,6 +181,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    #[Groups(['user'])]
+    #[SerializedName('username')]
     public function getProfileUsername(): ?string
     {
         return $this->username;

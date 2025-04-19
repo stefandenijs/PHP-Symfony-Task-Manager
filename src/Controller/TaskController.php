@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Task;
-use App\Repository\TaskRepository;
-use App\Service\ValidatorService;
+use App\Repository\TaskRepositoryInterface;
+use App\Service\ValidatorServiceInterface;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,13 +17,13 @@ use Symfony\Component\Serializer\SerializerInterface;
 // TODO: Add response documentation.
 final class TaskController extends AbstractController
 {
-    #[Route('/api/task', name: 'api_task', methods: ['GET', 'HEAD'])]
+    #[Route('/api/task', name: 'api_task', methods: ['GET'])]
     #[OA\Get(
         path: '/api/task',
-        summary: 'Get all tasks from a User',
+        summary: 'Get all tasks from an user',
         tags: ['Task']
     )]
-    public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
+    public function getTasks(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $user = $this->getUser();
 
@@ -46,7 +46,7 @@ final class TaskController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'integer')
     )]
-    public function getTask(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
+    public function getTask(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
     {
         $user = $this->getUser();
         $task = $taskRepository->find($id);
@@ -59,7 +59,7 @@ final class TaskController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_FORBIDDEN);
         }
 
-        $response = $serializer->serialize($task, 'json', ['groups' => ['task', 'task_owner']]);
+        $response = $serializer->serialize($task, 'json', ['groups' => ['task_single', 'task_owner']]);
 
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
@@ -72,7 +72,7 @@ final class TaskController extends AbstractController
     )]
     #[OA\QueryParameter(
         name: 'parent',
-        description: 'ID of the task parent',
+        description: 'ID of the task parent, this creates a subtask',
         in: 'query',
         required: false,
         schema: new OA\Schema(type: 'integer')
@@ -82,15 +82,20 @@ final class TaskController extends AbstractController
         required: true,
         content: new OA\JsonContent(
             required: ['title'],
+            properties: [
+                new OA\Property(property: 'title' ,type: 'string'),
+                new OA\Property(property: 'description', type: 'string'),
+                new OA\Property(property: 'deadline', type: 'string', format: 'date-time'),
+            ],
             type: 'object',
             example: [
-                'title' => 'title',
-                'description' => 'description',
-                'deadline' => 'deadline',
+                'title' => 'My new task',
+                'description' => 'A new task that is quite a lot to do.',
+                'deadline' => '2000-01-01T20:31:27+02:00',
             ]
         )
     )]
-    public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): JsonResponse|RedirectResponse
+    public function createTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 
@@ -102,7 +107,7 @@ final class TaskController extends AbstractController
         $task = new Task();
         $task->setTitle($title);
         $task->setDescription($description);
-        $task->setDeadline($deadline);
+        $task->setDeadline($deadline ? new \DateTime($deadline) : null);
         $task->setCreatedAt(new \DateTimeImmutable('now'));
         $task->setOwner($user);
 
@@ -111,8 +116,7 @@ final class TaskController extends AbstractController
             return $validationResponse;
         }
 
-        if (!empty($parentId))
-        {
+        if (!empty($parentId)) {
             $parent = $taskRepository->find($parentId);
             if ($parent === null) {
                 return new JsonResponse(['error' => 'Parent task not found'], Response::HTTP_NOT_FOUND);
@@ -125,7 +129,7 @@ final class TaskController extends AbstractController
 
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirect("/api/task/{$task->getId()}");
+        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], 303);
     }
 
     #[Route('/api/task/{id}', name: 'api_task_delete', methods: ['DELETE'])]
@@ -141,7 +145,7 @@ final class TaskController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'integer')
     )]
-    public function deleteTask(TaskRepository $taskRepository, int $id): JsonResponse
+    public function deleteTask(TaskRepositoryInterface $taskRepository, int $id): JsonResponse
     {
         $user = $this->getUser();
 
@@ -177,16 +181,22 @@ final class TaskController extends AbstractController
         required: true,
         content: new OA\JsonContent(
             required: ['title'],
+            properties: [
+                new OA\Property(property: 'title' ,type: 'string'),
+                new OA\Property(property: 'description', type: 'string'),
+                new OA\Property(property: 'deadline', type: 'string', format: 'date-time'),
+                new OA\Property(property: 'completed', type: 'boolean'),
+            ],
             type: 'object',
             example: [
-                'title' => 'title',
-                'description' => 'description',
-                'deadline' => 'deadline',
-                'completed' => 'completed',
-            ]
+                'title' => 'My updated task',
+                'description' => 'An updated task that is quite a lot to do.',
+                'deadline' => '2000-01-01T20:31:27+02:00',
+                'completed' => 'true',
+            ],
         )
     )]
-    public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
+    public function editTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 
@@ -214,7 +224,7 @@ final class TaskController extends AbstractController
             $task->setDeadline(new \DateTime($deadline));
         }
         if (!empty($complete)) {
-            $task->setComplete($complete);
+            $task->setCompleted($complete);
         }
 
         $validationResponse = $validatorService->validate($task, null, ['task']);
@@ -225,7 +235,7 @@ final class TaskController extends AbstractController
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirect("/api/task/{$task->getId()}");
+        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], 303);
     }
 
 }

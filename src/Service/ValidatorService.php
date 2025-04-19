@@ -6,7 +6,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class ValidatorService
+class ValidatorService implements ValidatorServiceInterface
 {
     private ValidatorInterface $validator;
 
