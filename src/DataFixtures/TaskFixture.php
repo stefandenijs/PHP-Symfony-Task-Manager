@@ -20,6 +20,14 @@ class TaskFixture extends Fixture implements DependentFixtureInterface
             $manager->persist($task);
         }
 
+        for ($i = 1; $i <= 10; $i++) {
+            $task = new Task();
+            $task->setTitle('Task ' . $i);
+            $task->setDescription('Task description ' . $i);
+            $task->setOwner($this->getReference(UserFixture::TEST_USER2, User::class));
+            $manager->persist($task);
+        }
+
         $manager->flush();
     }
 

@@ -14,6 +14,7 @@ class UserFixture extends Fixture
     private UserPasswordHasherInterface $passwordHasher;
 
     public const TEST_USER = 'test-user';
+    public const TEST_USER2 = 'test-user2';
     public function __construct(UserPasswordHasherInterface $passwordHasher) {
         $this->passwordHasher = $passwordHasher;
     }
@@ -29,8 +30,17 @@ class UserFixture extends Fixture
         $user->setPassword($this->passwordHasher->hashPassword($user, $user->getPlainPassword()));
         $manager->persist($user);
 
+        $otherUser = new User();
+        $otherUser->setUsername('testUser');
+        $otherUser->setPlainPassword('testUser12345');
+        $otherUser->setEmail('testUser2@test.com');
+        $otherUser->setRoles(['ROLE_USER']);
+
+        $otherUser->setPassword($this->passwordHasher->hashPassword($otherUser, $otherUser->getPlainPassword()));
+        $manager->persist($otherUser);
         $manager->flush();
 
         $this->addReference(self::TEST_USER, $user);
+        $this->addReference(self::TEST_USER2, $otherUser);
     }
 }

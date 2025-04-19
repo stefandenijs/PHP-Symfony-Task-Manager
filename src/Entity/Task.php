@@ -28,11 +28,11 @@ class Task
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'A valid task title is required', groups: ['task'])]
-    #[groups(['task'])]
+    #[groups(['task', 'task:create'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[groups(['task'])]
+    #[groups(['task', 'task:create'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DATETIMETZ_MUTABLE, nullable: true)]
@@ -59,6 +59,7 @@ class Task
     private ?User $owner = null;
 
     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'subTasks')]
+    #[Groups(['task', 'task:create'])]
     private ?self $parent = null;
 
     /**

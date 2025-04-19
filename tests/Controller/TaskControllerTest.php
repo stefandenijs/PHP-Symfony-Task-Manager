@@ -74,6 +74,22 @@ final class TaskControllerTest extends WebTestCase
         assert($response['error'] === 'Task not found');
     }
 
+    public function testGetTaskNotOwner(): void
+    {
+        // Arrange
+        $client = $this->setUpClient();
+        $id = 20;
+
+        // Act
+        $client->request('GET', "/api/task/$id");
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(403);
+        assert($response['error'] === 'Forbidden to access this resource');
+
+    }
+
     public function testCreateTask(): void
     {
         // Arrange
@@ -82,19 +98,70 @@ final class TaskControllerTest extends WebTestCase
         $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
 
         $task = new Task();
-        $task->setTitle('Task 11');
-        $task->setDescription('Task description 11');
+        $task->setTitle('Task 21');
+        $task->setDescription('Task description 21');
 
         // Act
         $newTask = $serializer->serialize($task, 'json');
         $client->request('POST', '/api/task', content: $newTask);
 
         // Assert
-        $this->assertResponseRedirects('/api/task/11');
-        $newTaskRes = $taskRepository->findOneBy(['title' => 'Task 11']);
+        $this->assertResponseRedirects('/api/task/21');
+        $newTaskRes = $taskRepository->findOneBy(['title' => 'Task 21']);
         $this->assertNotNull($newTaskRes);
         $this->assertEquals($task->getTitle(), $newTaskRes->getTitle());
         $this->assertEquals($task->getDescription(), $newTaskRes->getDescription());
+    }
+
+    public function testCreateSubTask(): void
+    {
+        // Arrange
+        $client = $this->setUpClient();
+        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
+
+        $task = new Task();
+        $task->setTitle('SubTask 22');
+        $task->setDescription('Subtask description 22');
+
+        // Act
+        $newTask = $serializer->serialize($task, 'json');
+        $client->request('POST', '/api/task?parent=1', content: $newTask);
+
+        // Assert
+        $this->assertResponseRedirects('/api/task/22');
+        $newTaskRes = $taskRepository->findOneBy(['parent' => '1']);
+        $this->assertNotNull($newTaskRes);
+        $this->assertEquals($task->getTitle(), $newTaskRes->getTitle());
+        $this->assertEquals($task->getDescription(), $newTaskRes->getDescription());
+        $this->assertEquals(1, $newTaskRes->getParent()->getId());
+    }
+
+    public function testCreateTaskWithNoAccessToParent(): void
+    {
+        // Arrange
+        $client = $this->setUpClient();
+        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+
+        $task = new Task();
+        $task->setTitle('Task 22');
+        $task->setDescription('Task description 22');
+
+        $context = [
+            'circular_reference_handler' => function ($object) {
+            return method_exists($object, 'getId') ? $object->getId() : null;
+            },
+            'groups' => ['task:create'],
+        ];
+
+        // Act
+        $newTask = $serializer->serialize($task, 'json', $context);
+        $client->request('POST', '/api/task?parent=20', content: $newTask);
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(403);
+        assert($response['error'] === 'Forbidden to access this resource');
     }
 
     public function testCreateTaskWithMissingTitle(): void
@@ -103,7 +170,7 @@ final class TaskControllerTest extends WebTestCase
         $client = $this->setUpClient();
         $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $task = new Task();
-        $task->setDescription('Task description 11');
+        $task->setDescription('Task description 21');
 
         // Act
         $newTask = $serializer->serialize($task, 'json');
@@ -124,20 +191,40 @@ final class TaskControllerTest extends WebTestCase
         $taskRepository = TaskControllerTest::getContainer()->get(TaskRepository::class);
 
         $updatedTask = new Task();
-        $id = 11;
-        $updatedTask->setTitle('Task 11 new');
-        $updatedTask->setDescription('Task description 11 new');
+        $id = 21;
+        $updatedTask->setTitle('Task 21 new');
+        $updatedTask->setDescription('Task description 21 new');
 
         // Act
         $requestUpdatedTask = $serializer->serialize($updatedTask, 'json');
         $client->request('PUT', "/api/task/$id", content: $requestUpdatedTask);
 
         // Assert
-        $updatedTaskRes = $taskRepository->findOneBy(['title' => 'Task 11 new']);
+        $updatedTaskRes = $taskRepository->findOneBy(['title' => 'Task 21 new']);
         $this->assertResponseRedirects("/api/task/$id");
         $this->assertNotNull($updatedTaskRes);
         $this->assertEquals($updatedTask->getTitle(), $updatedTaskRes->getTitle());
         $this->assertEquals($updatedTask->getDescription(), $updatedTaskRes->getDescription());
+    }
+
+    public function testUpdateTaskNotOwner(): void
+    {
+        // Arrange
+        $client = $this->setUpClient();
+        $serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
+        $updatedTask = new Task();
+        $id = 20;
+        $updatedTask->setTitle('Task 20 new');
+        $updatedTask->setDescription('Task description 20 new');
+
+        // Act
+        $requestUpdatedTask = $serializer->serialize($updatedTask, 'json');
+        $client->request('PUT', "/api/task/$id", content: $requestUpdatedTask);
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(403);
+        assert($response['error'] === 'Forbidden to access this resource');
     }
 
     public function testUpdateMissingTask(): void
@@ -159,7 +246,7 @@ final class TaskControllerTest extends WebTestCase
     {
         // Arrange
         $client = $this->setUpClient();
-        $id = 11;
+        $id = 21;
 
         // Act
         $client->request('DELETE', "/api/task/$id");
@@ -170,6 +257,22 @@ final class TaskControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(200);
         assert($response['success'] === 'Task deleted successfully');
     }
+
+    public function testDeleteTaskNotOwner(): void
+    {
+        // Arrange
+        $client = $this->setUpClient();
+        $id = 20;
+
+        // Act
+        $client->request('DELETE', "/api/task/$id");
+        $response = json_decode($client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(403);
+        assert($response['error'] === 'Forbidden to access this resource');
+    }
+
 
     public function testDeleteMissingTask(): void
     {

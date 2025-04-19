@@ -56,7 +56,7 @@ final class TaskController extends AbstractController
         }
 
         if ($task->getOwner()->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_FORBIDDEN);
         }
 
         $response = $serializer->serialize($task, 'json', ['groups' => ['task', 'task_owner']]);
@@ -151,7 +151,7 @@ final class TaskController extends AbstractController
         }
 
         if ($task->getOwner()->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
         $taskRepository->delete($task);
@@ -196,7 +196,7 @@ final class TaskController extends AbstractController
         }
 
         if ($task->getOwner()->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
         $title = $request->getPayload()->get('title');
