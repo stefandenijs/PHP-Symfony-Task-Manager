@@ -6,13 +6,13 @@ use App\Entity\User;
 use App\Repository\UserRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Attributes as OA;
 
 // TODO: Add response documentation.
 final class AuthController extends AbstractController
@@ -28,11 +28,17 @@ final class AuthController extends AbstractController
         description: 'Data used to register',
         required: true,
         content: new OA\JsonContent(
+            required: ['email', 'password', 'username'],
+            properties: [
+                new OA\Property(property: 'email', type: 'string'),
+                new OA\Property(property: 'password', type: 'string'),
+                new OA\Property(property: 'username', type: 'string'),
+            ],
             type: 'object',
             example: [
-                'email' => 'email',
-                'password' => 'password',
-                'username' => 'username',
+                'email' => 'mail@example.com',
+                'password' => 'yourPassword123@',
+                'username' => 'Bob',
             ]
         )
     )]
@@ -65,6 +71,7 @@ final class AuthController extends AbstractController
 
         return new JsonResponse(['message' => 'User successfully registered'], Response::HTTP_CREATED);
     }
+
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     #[OA\Post(
         path: '/api/login',
@@ -76,10 +83,15 @@ final class AuthController extends AbstractController
         description: 'Credentials used to login',
         required: true,
         content: new OA\JsonContent(
+            required: ['email', 'password'],
+            properties: [
+                new OA\Property(property: 'email', type: 'string'),
+                new OA\Property(property: 'password', type: 'string'),
+            ],
             type: 'object',
             example: [
-                'email' => 'email',
-                'password' => 'password',
+                'email' => 'mail@example.com',
+                'password' => 'yourPassword123@',
             ]
         )
     )]
@@ -91,10 +103,10 @@ final class AuthController extends AbstractController
 
         if (empty($email) || empty($password)) {
             if (empty($email)) {
-                return new JsonResponse(['error' => 'email' , "message" => "Email is required"], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(['error' => 'email', "message" => "Email is required"], Response::HTTP_BAD_REQUEST);
             }
             if (empty($password)) {
-                return new JsonResponse(["error" => "password" , "message" => "Password is required"], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(["error" => "password", "message" => "Password is required"], Response::HTTP_BAD_REQUEST);
             }
         }
 

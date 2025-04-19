@@ -9,7 +9,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class RedirectController extends AbstractController
 {
-    #[Route('/', name: 'app_redirect', methods: ['GET'])]
+    #[Route('/', name: 'api_redirect_doc', methods: ['GET'])]
     public function index(): Response
     {
         return new RedirectResponse('/api/doc');

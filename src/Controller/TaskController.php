@@ -6,6 +6,7 @@ use App\Entity\Task;
 use App\Repository\TaskRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
 use OpenApi\Attributes as OA;
+use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -82,11 +83,16 @@ final class TaskController extends AbstractController
         required: true,
         content: new OA\JsonContent(
             required: ['title'],
+            properties: [
+                new OA\Property(property: 'title' ,type: 'string'),
+                new OA\Property(property: 'description', type: 'string'),
+                new OA\Property(property: 'deadline', type: 'string', format: 'date-time'),
+            ],
             type: 'object',
             example: [
-                'title' => 'title',
-                'description' => 'description',
-                'deadline' => 'deadline',
+                'title' => 'My new task',
+                'description' => 'A new task that is quite a lot to do.',
+                'deadline' => '2000-01-01T20:31:27+02:00',
             ]
         )
     )]
@@ -111,8 +117,7 @@ final class TaskController extends AbstractController
             return $validationResponse;
         }
 
-        if (!empty($parentId))
-        {
+        if (!empty($parentId)) {
             $parent = $taskRepository->find($parentId);
             if ($parent === null) {
                 return new JsonResponse(['error' => 'Parent task not found'], Response::HTTP_NOT_FOUND);
@@ -177,13 +182,19 @@ final class TaskController extends AbstractController
         required: true,
         content: new OA\JsonContent(
             required: ['title'],
+            properties: [
+                new OA\Property(property: 'title' ,type: 'string'),
+                new OA\Property(property: 'description', type: 'string'),
+                new OA\Property(property: 'deadline', type: 'string', format: 'date-time'),
+                new OA\Property(property: 'completed', type: 'boolean'),
+            ],
             type: 'object',
             example: [
-                'title' => 'title',
-                'description' => 'description',
-                'deadline' => 'deadline',
-                'completed' => 'completed',
-            ]
+                'title' => 'My updated task',
+                'description' => 'An updated task that is quite a lot to do.',
+                'deadline' => '2000-01-01T20:31:27+02:00',
+                'completed' => 'true',
+            ],
         )
     )]
     public function editTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
