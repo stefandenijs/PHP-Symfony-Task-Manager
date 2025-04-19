@@ -107,7 +107,7 @@ final class TaskController extends AbstractController
         $task = new Task();
         $task->setTitle($title);
         $task->setDescription($description);
-        $task->setDeadline(new \DateTime($deadline));
+        $task->setDeadline($deadline ? new \DateTime($deadline) : null);
         $task->setCreatedAt(new \DateTimeImmutable('now'));
         $task->setOwner($user);
 
