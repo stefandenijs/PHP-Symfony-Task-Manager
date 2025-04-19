@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
-use App\Service\ValidatorService;
+use App\Repository\UserRepositoryInterface;
+use App\Service\ValidatorServiceInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -36,7 +36,7 @@ final class AuthController extends AbstractController
             ]
         )
     )]
-    public function register(Request $request, UserRepository $userRepository, ValidatorService $validatorService, UserPasswordHasherInterface $passwordHasher): JsonResponse
+    public function register(Request $request, UserRepositoryInterface $userRepository, ValidatorServiceInterface $validatorService, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
@@ -83,7 +83,7 @@ final class AuthController extends AbstractController
             ]
         )
     )]
-    public function login(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
+    public function login(Request $request, UserRepositoryInterface $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;

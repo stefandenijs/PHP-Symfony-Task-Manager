@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Task;
-use App\Repository\TaskRepository;
-use App\Service\ValidatorService;
+use App\Repository\TaskRepositoryInterface;
+use App\Service\ValidatorServiceInterface;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,7 +23,7 @@ final class TaskController extends AbstractController
         summary: 'Get all tasks from a User',
         tags: ['Task']
     )]
-    public function getTasks(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
+    public function getTasks(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $user = $this->getUser();
 
@@ -46,7 +46,7 @@ final class TaskController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'integer')
     )]
-    public function getTask(TaskRepository $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
+    public function getTask(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
     {
         $user = $this->getUser();
         $task = $taskRepository->find($id);
@@ -90,7 +90,7 @@ final class TaskController extends AbstractController
             ]
         )
     )]
-    public function createTask(TaskRepository $taskRepository, ValidatorService $validatorService, Request $request): JsonResponse|RedirectResponse
+    public function createTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 
@@ -141,7 +141,7 @@ final class TaskController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'integer')
     )]
-    public function deleteTask(TaskRepository $taskRepository, int $id): JsonResponse
+    public function deleteTask(TaskRepositoryInterface $taskRepository, int $id): JsonResponse
     {
         $user = $this->getUser();
 
@@ -186,7 +186,7 @@ final class TaskController extends AbstractController
             ]
         )
     )]
-    public function editTask(TaskRepository $taskRepository, ValidatorService $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
+    public function editTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 
