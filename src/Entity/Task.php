@@ -65,6 +65,7 @@ class Task
      * @var Collection<int, self>
      */
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
+    #[Groups(['task'])]
     private Collection $subTasks;
 
     public function getId(): ?int
