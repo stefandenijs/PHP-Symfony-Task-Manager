@@ -23,6 +23,15 @@ class TagRepository extends ServiceEntityRepository implements TagRepositoryInte
         $em->flush();
     }
 
+    public function createOrUpdateMany(array $tags): void
+    {
+        $em = $this->getEntityManager();
+        foreach ($tags as $tag) {
+            $em->persist($tag);
+        }
+        $em->flush();
+    }
+
     public function delete(Tag $tag): void
     {
         $em = $this->getEntityManager();

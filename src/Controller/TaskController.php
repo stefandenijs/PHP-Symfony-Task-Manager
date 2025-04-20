@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Tag;
 use App\Entity\Task;
+use App\Repository\TagRepositoryInterface;
 use App\Repository\TaskRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
 use OpenApi\Attributes as OA;
@@ -84,7 +86,7 @@ final class TaskController extends AbstractController
         content: new OA\JsonContent(
             required: ['title'],
             properties: [
-                new OA\Property(property: 'title' ,type: 'string'),
+                new OA\Property(property: 'title', type: 'string'),
                 new OA\Property(property: 'description', type: 'string'),
                 new OA\Property(property: 'deadline', type: 'string', format: 'date-time'),
             ],
@@ -183,7 +185,7 @@ final class TaskController extends AbstractController
         content: new OA\JsonContent(
             required: ['title'],
             properties: [
-                new OA\Property(property: 'title' ,type: 'string'),
+                new OA\Property(property: 'title', type: 'string'),
                 new OA\Property(property: 'description', type: 'string'),
                 new OA\Property(property: 'deadline', type: 'string', format: 'date-time'),
                 new OA\Property(property: 'completed', type: 'boolean'),
@@ -239,4 +241,117 @@ final class TaskController extends AbstractController
         return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], Response::HTTP_SEE_OTHER);
     }
 
+    #[Route('/api/tasks/assign-tags', name: 'api_tasks_tags', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/tasks/assign-tags',
+        summary: 'Assigns tags to tasks by ID',
+        tags: ['Task']
+    )]
+    #[OA\RequestBody(
+        description: 'Assign tags to multiple tasks by their IDs',
+        required: true,
+        content: new OA\JsonContent(
+            required: ['taskIds', 'tags'],
+            properties: [
+                new OA\Property(
+                    property: 'taskIds',
+                    description: 'Array of task IDs (UUID) to which the tags will be assigned',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer')
+                ),
+                new OA\Property(
+                    property: 'tags',
+                    description: 'Array of tags to be assigned to the tasks',
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'name', description: 'The name of the tag', type: 'string'),
+                            new OA\Property(property: 'color', description: 'The hex color of the tag (e.g., #FF5733)', type: 'string')
+                        ],
+                        type: 'object'
+                    )
+                ),
+            ],
+            type: 'object',
+            example: [
+                'taskIds' => [
+                    '550e8400-e29b-41d4-a716-446655440000',
+                    '550e8400-e29b-41d4-a716-446655440001',
+                    '550e8400-e29b-41d4-a716-446655440002'
+                ],
+                'tags' => [
+                    ['name' => 'Urgent', 'colour' => '#FF5733'],
+                    ['name' => 'Work', 'colour' => '#33CFFF'],
+                    ['name' => 'Important', 'colour' => '#F1C40F']
+                ]
+            ]
+        )
+    )]
+    public function addTagsToTasks(TaskRepositoryInterface $taskRepository, TagRepositoryInterface $tagRepository, ValidatorServiceInterface $validatorService, Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+
+        if (empty($data['tags']) || empty($data['taskIds'])) {
+            return new JsonResponse(['error' => 'Task ids and tags are required'], Response::HTTP_BAD_REQUEST,);
+        }
+
+        $taskIds = $data['taskIds'];
+        $em = $taskRepository->getEntityManager();
+
+        try {
+            $em->beginTransaction();
+
+            $tasks = $taskRepository->findBy(['id' => $taskIds]);
+
+            if (count($tasks) !== count($taskIds)) {
+                return new JsonResponse(['error' => 'Task ids not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach ($tasks as $task) {
+                if ($task->getOwner()->getId() !== $user->getId()) {
+                    return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
+                }
+            }
+
+            $tags = [];
+            foreach ($data['tags'] as $tagData) {
+                $tag = $tagRepository->findOneBy(['name' => $tagData['name']]);
+                if (!$tag) {
+                    $tag = new Tag();
+                    $tag->setName($tagData['name']);
+                    $tag->setColour($tagData['colour']);
+                    $tag->setCreator($user);
+
+                    $validationResponse = $validatorService->validate($tag);
+                    if ($validationResponse !== null) {
+                        return $validationResponse;
+                    }
+                    $em->persist($tag);
+                }
+                $tags[] = $tag;
+            }
+
+            foreach ($tasks as $task) {
+                foreach ($tags as $tag) {
+                    if (!$task->getTags()->contains($tag)) {
+                        $task->addTag($tag);
+                    }
+                }
+                $em->persist($task);
+            }
+
+            $em->flush();
+            $em->commit();
+
+            return new JsonResponse(['success' => 'Tags assigned successfully'], Response::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            $em->rollback();
+            return new JsonResponse([
+                'error' => 'Something went wrong',
+                'message' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

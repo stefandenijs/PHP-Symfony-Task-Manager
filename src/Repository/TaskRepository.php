@@ -24,6 +24,15 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
         $em->flush();
     }
 
+    public function createOrUpdateMany(array $tasks): void
+    {
+        $em = $this->getEntityManager();
+        foreach ($tasks as $task) {
+            $em->persist($task);
+        }
+        $em->flush();
+    }
+
     public function delete(Task $task): void
     {
         $em = $this->getEntityManager();
