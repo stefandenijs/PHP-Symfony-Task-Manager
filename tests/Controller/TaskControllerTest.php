@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Task;
+use App\Repository\TagRepositoryInterface;
 use App\Repository\TaskRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -13,12 +14,14 @@ final class TaskControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private TaskRepositoryInterface $taskRepository;
+    private TagRepositoryInterface $tagRepository;
     private SerializerInterface $serializer;
 
     public function setUp(): void
     {
         $this->client = TaskControllerTest::createClient();
         $this->taskRepository = TaskControllerTest::getContainer()->get(TaskRepositoryInterface::class);
+        $this->tagRepository = TaskControllerTest::getContainer()->get(TagRepositoryInterface::class);
         $this->serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $this->client->request('POST', '/api/login', content: json_encode(['email' => 'bob@test.com', 'password' => 'testUser12345']));
 
@@ -331,5 +334,264 @@ final class TaskControllerTest extends WebTestCase
         // Assert
         $this->assertResponseStatusCodeSame(404);
         assert($response['error'] === 'Task not found');
+    }
+
+    public function testAddTagsToTasks(): void
+    {
+        // Arrange
+        $client = $this->client;
+        $taskRepository = $this->taskRepository;
+
+        $task1 = $taskRepository->findOneBy(['title' => 'Task 1']);
+        $task2 = $taskRepository->findOneBy(['title' => 'Task 2']);
+        $tasks = [$task1, $task2];
+        $taskIds = array_map(fn($task) => $task->getId(), $tasks);
+
+        $tagsData = [
+            [
+                'name' => 'Urgent',
+                'colour' => '#FF0000'
+            ],
+            [
+                'name' => 'Important',
+                'colour' => '#0000FF'
+            ]
+        ];
+
+        $data = [
+            'taskIds' => $taskIds,
+            'tags' => $tagsData
+        ];
+
+        // Act
+        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
+
+        // Assert
+        $this->assertResponseIsSuccessful();
+        $responseContent = json_decode($client->getResponse()->getContent(), true);
+        $this->assertEquals('Tags assigned successfully', $responseContent['success']);
+
+        foreach ($tasks as $task) {
+            $taskTags = $task->getTags();
+            $this->assertCount(count($tagsData), $taskTags);
+        }
+    }
+
+    public function testAddTagsToTasksMissingTagsOrTaskIds(): void
+    {
+        // Arrange
+        $client = $this->client;
+
+        // Act
+        $client->request('POST', '/api/task/assign-tags', content: json_encode([]));
+
+        // Assert
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(400);
+        assert($response['error'] === 'Task ids and tags are required');
+    }
+
+    public function testAddTagsToTasksInvalidTaskIds(): void
+    {
+        // Arrange
+        $client = $this->client;
+        $invalidTaskIds = [Uuid::v4()->toRfc4122()];
+        $tagsData = [
+            ['name' => 'Urgent', 'colour' => '#FF0000']
+        ];
+        $data = [
+            'taskIds' => $invalidTaskIds,
+            'tags' => $tagsData
+        ];
+
+        // Act
+        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(404);
+        assert($response['error'] === 'Some task ids not found');
+    }
+
+    public function testAddTagsToTasksForbiddenAccess(): void
+    {
+        // Arrange
+        $client = $this->client;
+        $task = $this->taskRepository->findOneBy(['title' => 'Task 11']);
+
+        $data = [
+            'taskIds' => [$task->getId()],
+            'tags' => [['name' => 'Urgent', 'colour' => '#FF0000']]
+        ];
+
+        // Act
+        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(403);
+        assert($response['error'] === 'Forbidden to access this resource');
+    }
+
+    public function testAddTagsToTasksMissingTagNameOrColour(): void
+    {
+        // Arrange
+        $client = $this->client;
+        $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
+        $data = [
+            'taskIds' => [$task->getId()],
+            'tags' => [['name' => 'Urgent']]
+        ];
+
+        // Act
+        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(400);
+        assert($response['error'] === 'Each tag must have both name and colour');
+    }
+
+    public function testAddTagsToTasksInvalidTagValidation(): void
+    {
+        // Arrange
+        $client = $this->client;
+        $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
+        $data = [
+            'taskIds' => [$task->getId()],
+            'tags' => [['name' => 'Urgent', 'colour' => 'invalidColour']]
+        ];
+
+        // Act
+        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(400);
+        assert($response[0]['field'] === 'colour');
+        assert($response[0]['message'] === 'Tag colour should match a hex colour value');
+    }
+
+    public function testRemoveTagsFromTasks(): void
+    {
+        // Arrange
+        $task1 = $this->taskRepository->findOneBy(['title' => 'Task 1']);
+        $task2 = $this->taskRepository->findOneBy(['title' => 'Task 2']);
+        $tasks = [$task1, $task2];
+        $taskIds = array_map(fn($task) => $task->getId(), $tasks);
+
+        $tag1 = $this->tagRepository->findOneBy(['name' => 'Tag 1']);
+        $tag2 = $this->tagRepository->findOneBy(['name' => 'Tag 3']);
+        $tags = [$tag1, $tag2];
+        $tagIds = array_map(fn($tag) => $tag->getId(), $tags);
+
+        $data = [
+            'taskIds' => $taskIds,
+            'tagIds' => $tagIds,
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task/remove-tags', content: json_encode($data));
+
+        // Assert
+        $this->assertResponseIsSuccessful();
+
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Tags removed successfully', $responseContent['success']);
+
+        foreach ($tasks as $task) {
+            foreach ($tags as $tag) {
+                $this->assertFalse($task->getTags()->contains($tag));
+            }
+        }
+    }
+
+    public function testRemoveTagsFromTasksMissingTaskIdsOrTagIds(): void
+    {
+        // Act
+        $this->client->request('POST', '/api/task/remove-tags', content: json_encode([]));
+
+        // Assert
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(400);
+        $this->assertEquals('Task ids and tag ids are required', $response['error']);
+    }
+
+    public function testRemoveTagsFromTasksInvalidTaskIds(): void
+    {
+        // Arrange
+        $invalidTaskIds = [Uuid::v4()->toRfc4122()];
+        $tag1 = $this->tagRepository->findOneBy(['name' => 'Tag 1']);
+        $tagIds = [$tag1->getId()];
+
+        $data = [
+            'taskIds' => $invalidTaskIds,
+            'tagIds' => $tagIds,
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task/remove-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(404);
+        $this->assertEquals('Some task ids not found', $response['error']);
+    }
+
+    public function testRemoveTagsFromTasksForbiddenAccess(): void
+    {
+        // Arrange
+        $task = $this->taskRepository->findOneBy(['title' => 'Task 11']);
+        $tag1 = $this->tagRepository->findOneBy(['name' => 'Tag 1']);
+        $data = [
+            'taskIds' => [$task->getId()],
+            'tagIds' => [$tag1->getId()],
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task/remove-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
+    }
+
+    public function testRemoveTagsFromTasksTagNotFound(): void
+    {
+        // Arrange
+        $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
+        $invalidTagId = Uuid::v4()->toRfc4122();
+        $data = [
+            'taskIds' => [$task->getId()],
+            'tagIds' => [$invalidTagId],
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task/remove-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(404);
+        $this->assertEquals('Tag not found', $response['error']);
+    }
+
+    public function testRemoveTagsFromTasksTagCreatedByAnotherUser(): void
+    {
+        // Arrange
+        $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
+        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 11']);
+        $data = [
+            'taskIds' => [$task->getId()],
+            'tagIds' => [$tag->getId()],
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task/remove-tags', content: json_encode($data));
+
+        // Assert
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertEquals('Cannot modify tags created by another user', $response['error']);
     }
 }

@@ -13,8 +13,6 @@ final class TagControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private TagRepositoryInterface $tagRepository;
-    private TaskRepositoryInterface $taskRepository;
-    private SerializerInterface $serializer;
 
     public function setUp(): void
     {
@@ -79,7 +77,7 @@ final class TagControllerTest extends WebTestCase
     public function testGetTagByIdForbidden(): void
     {
         // Arrange
-        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 11']); // belongs to other user
+        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 11']);
 
         // Act
         $this->client->request('GET', '/api/tag/' . $tag->getId());
@@ -134,7 +132,7 @@ final class TagControllerTest extends WebTestCase
     public function testDeleteTag(): void
     {
         // Arrange
-        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 2']); // from authenticated user
+        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 2']);
 
         // Act
         $this->client->request('DELETE', '/api/tag/' . $tag->getId());
@@ -149,7 +147,7 @@ final class TagControllerTest extends WebTestCase
     public function testDeleteTagForbidden(): void
     {
         // Arrange
-        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 12']); // another user’s tag
+        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 12']);
 
         // Act
         $this->client->request('DELETE', '/api/tag/' . $tag->getId());
@@ -172,142 +170,5 @@ final class TagControllerTest extends WebTestCase
 
         $response = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('Tag not found', $response['error']);
-    }
-
-
-    public function testAddTagsToTasks(): void
-    {
-        // Arrange
-        $client = $this->client;
-        $taskRepository = $this->taskRepository;
-
-        $task1 = $taskRepository->findOneBy(['title' => 'Task 1']);
-        $task2 = $taskRepository->findOneBy(['title' => 'Task 2']);
-        $tasks = [$task1, $task2];
-        $taskIds = array_map(fn($task) => $task->getId(), $tasks);
-
-        $tagsData = [
-            [
-                'name' => 'Urgent',
-                'colour' => '#FF0000'
-            ],
-            [
-                'name' => 'Important',
-                'colour' => '#0000FF'
-            ]
-        ];
-
-        $data = [
-            'taskIds' => $taskIds,
-            'tags' => $tagsData
-        ];
-
-        // Act
-        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
-
-        // Assert
-        $this->assertResponseIsSuccessful();
-        $responseContent = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('Tags assigned successfully', $responseContent['success']);
-
-        foreach ($tasks as $task) {
-            $taskTags = $task->getTags();
-            $this->assertCount(count($tagsData), $taskTags);
-        }
-    }
-
-    public function testAddTagsToTasksMissingTagsOrTaskIds(): void
-    {
-        // Arrange
-        $client = $this->client;
-
-        // Act
-        $client->request('POST', '/api/task/assign-tags', content: json_encode([]));
-
-        // Assert
-        $response = json_decode($client->getResponse()->getContent(), true);
-        $this->assertResponseStatusCodeSame(400);
-        assert($response['error'] === 'Task ids and tags are required');
-    }
-
-    public function testAddTagsToTasksInvalidTaskIds(): void
-    {
-        // Arrange
-        $client = $this->client;
-        $invalidTaskIds = [Uuid::v4()->toRfc4122()];
-        $tagsData = [
-            ['name' => 'Urgent', 'colour' => '#FF0000']
-        ];
-        $data = [
-            'taskIds' => $invalidTaskIds,
-            'tags' => $tagsData
-        ];
-
-        // Act
-        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
-
-        // Assert
-        $response = json_decode($client->getResponse()->getContent(), true);
-        $this->assertResponseStatusCodeSame(404);
-        assert($response['error'] === 'Task ids not found');
-    }
-
-    public function testAddTagsToTasksForbiddenAccess(): void
-    {
-        // Arrange
-        $client = $this->client;
-        $task = $this->taskRepository->findOneBy(['title' => 'Task 11']);
-
-        $data = [
-            'taskIds' => [$task->getId()],
-            'tags' => [['name' => 'Urgent', 'colour' => '#FF0000']]
-        ];
-
-        // Act
-        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
-
-        // Assert
-        $response = json_decode($client->getResponse()->getContent(), true);
-        $this->assertResponseStatusCodeSame(403);
-        assert($response['error'] === 'Forbidden to access this resource');
-    }
-
-    public function testAddTagsToTasksMissingTagNameOrColour(): void
-    {
-        // Arrange
-        $client = $this->client;
-        $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
-        $data = [
-            'taskIds' => [$task->getId()],
-            'tags' => [['name' => 'Urgent']]
-        ];
-
-        // Act
-        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
-
-        // Assert
-        $response = json_decode($client->getResponse()->getContent(), true);
-        $this->assertResponseStatusCodeSame(400);
-        assert($response['error'] === 'Each tag must have both name and colour');
-    }
-
-    public function testAddTagsToTasksInvalidTagValidation(): void
-    {
-        // Arrange
-        $client = $this->client;
-        $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
-        $data = [
-            'taskIds' => [$task->getId()],
-            'tags' => [['name' => 'Urgent', 'colour' => 'invalidColour']]  // Invalid colour format
-        ];
-
-        // Act
-        $client->request('POST', '/api/task/assign-tags', content: json_encode($data));
-
-        // Assert
-        $response = json_decode($client->getResponse()->getContent(), true);
-        $this->assertResponseStatusCodeSame(400);
-        assert($response[0]['field'] === 'colour');
-        assert($response[0]['message'] === 'Tag colour should match a hex colour value');
     }
 }
