@@ -20,7 +20,7 @@ class TaskFixture extends Fixture implements DependentFixtureInterface
             $manager->persist($task);
         }
 
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 11; $i <= 20; $i++) {
             $task = new Task();
             $task->setTitle('Task ' . $i);
             $task->setDescription('Task description ' . $i);
