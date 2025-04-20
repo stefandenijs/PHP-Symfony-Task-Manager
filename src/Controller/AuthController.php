@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
 // TODO: Add response documentation.
 final class AuthController extends AbstractController
@@ -95,7 +96,7 @@ final class AuthController extends AbstractController
             ]
         )
     )]
-    public function login(Request $request, UserRepositoryInterface $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager): JsonResponse
+    public function login(Request $request, UserRepositoryInterface $userRepository, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTTokenManager, SerializerInterface $serializer): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
@@ -117,10 +118,9 @@ final class AuthController extends AbstractController
         }
 
         $token = $JWTTokenManager->create($user);
+        $userData = json_decode($serializer->serialize($user, 'json', ['groups' => ['user']]), true);
+        $responseData = ['token' => $token, 'message' => 'User logged in successfully', 'user' => $userData];
 
-        return new JsonResponse(['token' => $token, 'message' => 'User logged in successfully', 'user' => [
-            'username' => $user->getProfileUsername(),
-            'email' => $user->getUsername(),
-        ]], Response::HTTP_OK);
+        return new JsonResponse($responseData, Response::HTTP_OK);
     }
 }
