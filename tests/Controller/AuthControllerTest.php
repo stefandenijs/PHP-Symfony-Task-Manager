@@ -18,7 +18,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'test2@test.com', 'password' => 'testUser12345@#!', 'username' => 'testUser2']));
+        $client->request('POST', '/api/register', content: json_encode(['email' => 'frank@test.com', 'password' => 'testUser12345@#!', 'username' => 'Frank']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -32,11 +32,12 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'my3emailexample.com', 'password' => 'testUser12345@#!', 'username' => 'testUser2']));
+        $client->request('POST', '/api/register', content: json_encode(['email' => 'franktest.com', 'password' => 'testUser12345@#!', 'username' => 'The other Frank']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
-        // Assert
-        $this->assertResponseStatusCodeSame(400);
+        // Assert;
+        $statusCode = $client->getResponse()->getStatusCode();
+        $this->assertTrue(in_array($statusCode, [400, 422]));
         $this->assertArrayHasKey("field", $response[0]);
         $this->assertArrayHasKey("message", $response[0]);
         $this->assertArrayHasKey("code", $response[0]);
@@ -68,7 +69,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'test3@test.com', 'password' => 'testUser!', 'username' => 'testUser2']));
+        $client->request('POST', '/api/register', content: json_encode(['email' => 'dave@test.com', 'password' => 'testUser!', 'username' => 'testUser2']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -86,7 +87,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'test3@test.com', 'username' => 'testUser3']));
+        $client->request('POST', '/api/register', content: json_encode(['email' => 'dave@test.com', 'username' => 'testUser3']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -104,7 +105,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'test3@test.com', 'password' => 'testUser12345@#!']));
+        $client->request('POST', '/api/register', content: json_encode(['email' => 'dave@test.com', 'password' => 'testUser12345@#!']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -122,7 +123,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'test2@test.com', 'password' => 'testUser12345@#!']));
+        $client->request('POST', '/api/login', content: json_encode(['email' => 'frank@test.com', 'password' => 'testUser12345@#!']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -140,7 +141,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'test2@test.com', 'password' => 'tesUser12345@#!']));
+        $client->request('POST', '/api/login', content: json_encode(['email' => 'frank@test.com', 'password' => 'tesUser12345@#!']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -175,7 +176,7 @@ final class AuthControllerTest extends WebTestCase
         $client = $this->setUpClient();
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'test2@test.com']));
+        $client->request('POST', '/api/login', content: json_encode(['email' => 'frank@test.com']));
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert

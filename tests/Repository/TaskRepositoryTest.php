@@ -5,7 +5,6 @@ namespace App\Tests\Repository;
 use App\Entity\Task;
 use App\Repository\TaskRepository;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class TaskRepositoryTest extends KernelTestCase
@@ -25,7 +24,7 @@ class TaskRepositoryTest extends KernelTestCase
     public function testCreate(): Task
     {
         // Arrange
-        $user = $this->userRepository->findOneByEmail("test@test.com");
+        $user = $this->userRepository->findOneByEmail("bob@test.com");
         $task = new Task();
         $task->setTitle("Create Task");
         $task->setDescription("Create Task");
