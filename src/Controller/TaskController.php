@@ -241,9 +241,9 @@ final class TaskController extends AbstractController
         return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], Response::HTTP_SEE_OTHER);
     }
 
-    #[Route('/api/tasks/assign-tags', name: 'api_tasks_tags', methods: ['POST'])]
+    #[Route('/api/task/assign-tags', name: 'api_tasks_assign_tags', methods: ['POST'])]
     #[OA\Post(
-        path: '/api/tasks/assign-tags',
+        path: '/api/task/assign-tags',
         summary: 'Assigns tags to tasks by ID',
         tags: ['Task']
     )]
@@ -305,7 +305,7 @@ final class TaskController extends AbstractController
             $tasks = $taskRepository->findBy(['id' => $taskIds]);
 
             if (count($tasks) !== count($taskIds)) {
-                return new JsonResponse(['error' => 'Task ids not found'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['error' => 'Some task ids not found'], Response::HTTP_NOT_FOUND);
             }
 
             foreach ($tasks as $task) {
@@ -316,19 +316,28 @@ final class TaskController extends AbstractController
 
             $tags = [];
             foreach ($data['tags'] as $tagData) {
-                $tag = $tagRepository->findOneBy(['name' => $tagData['name']]);
-                if (!$tag) {
-                    $tag = new Tag();
-                    $tag->setName($tagData['name']);
-                    $tag->setColour($tagData['colour']);
-                    $tag->setCreator($user);
-
-                    $validationResponse = $validatorService->validate($tag);
-                    if ($validationResponse !== null) {
-                        return $validationResponse;
-                    }
-                    $em->persist($tag);
+                if (!isset($tagData['name']) || !isset($tagData['colour'])) {
+                    return new JsonResponse(['error' => 'Each tag must have both name and colour'], Response::HTTP_BAD_REQUEST);
                 }
+
+                $tag = $tagRepository->findOneBy(['name' => $tagData['name']]);if (!$tag) {
+                    $tag = new Tag();
+                    $tag->setCreator($user);
+                } else if ($tag->getCreator() !== $user) {
+                    return new JsonResponse(['error' => 'Cannot modify tags created by another user'], Response::HTTP_FORBIDDEN);
+                }
+
+                $tag->setName($tagData['name']);
+                $tag->setColour($tagData['colour']);
+
+                // TODO: Fix validation being skipped for tags, but somehow not in tests
+                $validationResponse = $validatorService->validate($tag);
+                if ($validationResponse !== null) {
+                    return $validationResponse;
+                }
+
+                $em->persist($tag);
+
                 $tags[] = $tag;
             }
 
@@ -345,6 +354,111 @@ final class TaskController extends AbstractController
             $em->commit();
 
             return new JsonResponse(['success' => 'Tags assigned successfully'], Response::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            $em->rollback();
+            return new JsonResponse([
+                'error' => 'Something went wrong',
+                'message' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/api/task/remove-tags', name: 'api_tasks_remove_tags', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/task/remove-tags',
+        summary: 'Removes tags from tasks by ID',
+        tags: ['Task']
+    )]
+    #[OA\RequestBody(
+        description: 'Remove tags from multiple tasks by their IDs',
+        required: true,
+        content: new OA\JsonContent(
+            required: ['taskIds', 'tagIds'],
+            properties: [
+                new OA\Property(
+                    property: 'taskIds',
+                    description: 'Array of task IDs (UUID) from which the tags will be removed',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer')
+                ),
+                new OA\Property(
+                    property: 'tagIds',
+                    description: 'Array of tag IDs (UUID) which will be removed',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer')
+                ),
+            ],
+            type: 'object',
+            example: [
+                'taskIds' => [
+                    '550e8400-e29b-41d4-a716-446655440000',
+                    '550e8400-e29b-41d4-a716-446655440001',
+                    '550e8400-e29b-41d4-a716-446655440002'
+                ],
+                'tagIds' => [
+                    '550e8400-e29b-41d4-a716-446655440000',
+                    '550e8400-e29b-41d4-a716-446655440001',
+                    '550e8400-e29b-41d4-a716-446655440002'
+                ]
+            ]
+        )
+    )]
+    public function removeTagsFromTasks(TaskRepositoryInterface $taskRepository, TagRepositoryInterface $tagRepository, ValidatorServiceInterface $validatorService, Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+
+        if (empty($data['tagIds']) || empty($data['taskIds'])) {
+            return new JsonResponse(['error' => 'Task ids and tag ids are required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $taskIds = $data['taskIds'];
+        $em = $taskRepository->getEntityManager();
+
+        try {
+            $em->beginTransaction();
+
+            $tasks = $taskRepository->findBy(['id' => $taskIds]);
+
+            if (count($tasks) !== count($taskIds)) {
+                return new JsonResponse(['error' => 'Some task ids not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach ($tasks as $task) {
+                if ($task->getOwner()->getId() !== $user->getId()) {
+                    return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
+                }
+            }
+
+            $tags = [];
+            foreach ($data['tagIds'] as $tagData) {
+                $tag = $tagRepository->findOneBy(['id' => $tagData]);
+
+                if (!$tag) {
+                    return new JsonResponse(['error' => 'Tag not found'], Response::HTTP_NOT_FOUND);
+                }
+
+                if ($tag->getCreator() !== $user) {
+                    return new JsonResponse(['error' => 'Cannot modify tags created by another user'], Response::HTTP_FORBIDDEN);
+                }
+
+                $tags[] = $tag;
+            }
+
+            foreach ($tasks as $task) {
+                foreach ($tags as $tag) {
+                    if ($task->getTags()->contains($tag)) {
+                        $task->removeTag($tag);
+                    }
+                }
+                $em->persist($task);
+            }
+
+            $em->flush();
+            $em->commit();
+
+            return new JsonResponse(['success' => 'Tags removed successfully'], Response::HTTP_OK);
 
         } catch (\Throwable $e) {
             $em->rollback();

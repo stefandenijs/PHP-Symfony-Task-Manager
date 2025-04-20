@@ -27,6 +27,8 @@ class TagFixture extends Fixture implements DependentFixtureInterface
             $tag->setCreator($this->getReference(UserFixture::TEST_USER2, User::class));
             $manager->persist($tag);
         }
+
+        $manager->flush();
     }
 
     public function getDependencies(): array
