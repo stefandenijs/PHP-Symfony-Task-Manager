@@ -90,6 +90,6 @@ final class UserController extends AbstractController
 
         $userRepository->createOrUpdate($userToUpdate);
 
-        return $this->redirectToRoute('api_user_get', ['id' => $id], 303);
+        return $this->redirectToRoute('api_user_get', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

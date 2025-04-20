@@ -130,7 +130,7 @@ final class TaskController extends AbstractController
 
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], 303);
+        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], Response::HTTP_SEE_OTHER);
     }
 
     #[Route('/api/task/{id}', name: 'api_task_delete', methods: ['DELETE'])]
@@ -236,7 +236,7 @@ final class TaskController extends AbstractController
         $task->setUpdatedAt(new \DateTimeImmutable('now'));
         $taskRepository->createOrUpdate($task);
 
-        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], 303);
+        return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], Response::HTTP_SEE_OTHER);
     }
 
 }
