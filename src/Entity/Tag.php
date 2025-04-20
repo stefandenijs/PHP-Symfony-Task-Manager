@@ -30,7 +30,7 @@ class Tag
     private ?User $creator = null;
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'Tag title is required')]
-    private ?string $title = null;
+    private ?string $name = null;
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt;
     #[ORM\Column(nullable: true)]
@@ -77,14 +77,14 @@ class Tag
         return $this;
     }
 
-    public function getTitle(): ?string
+    public function getName(): ?string
     {
-        return $this->title;
+        return $this->name;
     }
 
-    public function setTitle(string $title): static
+    public function setName(string $name): static
     {
-        $this->title = $title;
+        $this->name = $name;
 
         return $this;
     }

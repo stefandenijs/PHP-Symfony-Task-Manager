@@ -74,9 +74,9 @@ final class TagController extends AbstractController
         description: 'Creates a tag',
         required: true,
         content: new OA\JsonContent(
-            required: ['title', 'colour'],
+            required: ['name', 'colour'],
             properties: [
-                new OA\Property(property: 'title', type: 'string'),
+                new OA\Property(property: 'name', type: 'string'),
                 new OA\Property(property: 'colour', type: 'string'),
             ],
             type: 'object',
@@ -90,11 +90,11 @@ final class TagController extends AbstractController
     {
         $user = $this->getUser();
 
-        $title = $request->getPayload()->get('title');
+        $name = $request->getPayload()->get('name');
         $colour = $request->getPayload()->get('colour');
 
         $newTag = new Tag();
-        $newTag->setTitle($title);
+        $newTag->setName($name);
         $newTag->setColour($colour);
         $newTag->setCreator($user);
 
@@ -149,12 +149,12 @@ final class TagController extends AbstractController
         required: true,
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: 'title', type: 'string'),
+                new OA\Property(property: 'name', type: 'string'),
                 new OA\Property(property: 'colour', type: 'string'),
             ],
             type: 'object',
             example: [
-                'title' => 'My updated tag',
+                'name' => 'My updated tag',
                 'colour' => '#52eb34',
             ]
         )
@@ -172,11 +172,11 @@ final class TagController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
-        $title = $request->getPayload()->get('title');
+        $name = $request->getPayload()->get('name');
         $colour = $request->getPayload()->get('colour');
 
-        if (!empty($title)) {
-            $tag->setTitle($title);
+        if (!empty($name)) {
+            $tag->setTitle($name);
         }
         if (!empty($colour)) {
             $tag->setColour($colour);
