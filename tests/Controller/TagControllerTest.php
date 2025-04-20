@@ -18,8 +18,6 @@ final class TagControllerTest extends WebTestCase
     {
         $this->client = TaskControllerTest::createClient();
         $this->tagRepository = TaskControllerTest::getContainer()->get(TagRepositoryInterface::class);
-        $this->taskRepository = TaskControllerTest::getContainer()->get(TaskRepositoryInterface::class);
-        $this->serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $this->client->request('POST', '/api/login', content: json_encode(['email' => 'bob@test.com', 'password' => 'testUser12345']));
 
         $data = json_decode($this->client->getResponse()->getContent(), true);
