@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Uid\Uuid;
 
 // TODO: Add response documentation.
 final class TaskController extends AbstractController
@@ -44,9 +45,9 @@ final class TaskController extends AbstractController
         description: 'ID of the task',
         in: 'path',
         required: true,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
-    public function getTask(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer, int $id): JsonResponse
+    public function getTask(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer, Uuid $id): JsonResponse
     {
         $user = $this->getUser();
         $task = $taskRepository->find($id);
@@ -75,7 +76,7 @@ final class TaskController extends AbstractController
         description: 'ID of the task parent, this creates a subtask',
         in: 'query',
         required: false,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
     #[OA\RequestBody(
         description: 'Creates a task',
@@ -143,9 +144,9 @@ final class TaskController extends AbstractController
         description: 'ID of the task',
         in: 'path',
         required: true,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
-    public function deleteTask(TaskRepositoryInterface $taskRepository, int $id): JsonResponse
+    public function deleteTask(TaskRepositoryInterface $taskRepository, Uuid $id): JsonResponse
     {
         $user = $this->getUser();
 
@@ -174,7 +175,7 @@ final class TaskController extends AbstractController
         description: 'ID of the task',
         in: 'path',
         required: true,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
     #[OA\RequestBody(
         description: 'Update a task',
@@ -196,7 +197,7 @@ final class TaskController extends AbstractController
             ],
         )
     )]
-    public function editTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, int $id, Request $request): JsonResponse|RedirectResponse
+    public function editTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, Uuid $id, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
 

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Uid\Uuid;
 
 final class UserController extends AbstractController
 {
@@ -25,9 +26,9 @@ final class UserController extends AbstractController
         description: 'ID of the user',
         in: 'path',
         required: true,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
-    public function getUserById(int $id, SerializerInterface $serializer, UserRepositoryInterface $userRepository): JsonResponse
+    public function getUserById(Uuid $id, SerializerInterface $serializer, UserRepositoryInterface $userRepository): JsonResponse
     {
         $user = $userRepository->find($id);
 
@@ -51,7 +52,7 @@ final class UserController extends AbstractController
         description: 'ID of the user',
         in: 'path',
         required: true,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
     #[OA\RequestBody(
         description: 'Update an user by ID',
@@ -67,7 +68,7 @@ final class UserController extends AbstractController
             ],
         )
     )]
-    public function editUser(Request $request, int $id, UserRepositoryInterface $userRepository): JsonResponse|RedirectResponse
+    public function editUser(Request $request, Uuid $id, UserRepositoryInterface $userRepository): JsonResponse|RedirectResponse
     {
         $currentUser = $this->getUser();
         $userToUpdate = $userRepository->find($id);
