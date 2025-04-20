@@ -59,9 +59,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user'])]
     private ?string $username = null;
 
+    /**
+     * @var Collection<int, Tag>
+     */
+    #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'creator', orphanRemoval: true)]
+    private Collection $Tags;
+
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
+        $this->Tags = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -196,6 +203,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPlainPassword(?string $plainPassword): static
     {
         $this->plainPassword = $plainPassword;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    public function getTags(): Collection
+    {
+        return $this->Tags;
+    }
+
+    public function addTag(Tag $tag): static
+    {
+        if (!$this->Tags->contains($tag)) {
+            $this->Tags->add($tag);
+            $tag->setCreator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): static
+    {
+        if ($this->Tags->removeElement($tag)) {
+            // set the owning side to null (unless already changed)
+            if ($tag->getCreator() === $this) {
+                $tag->setCreator(null);
+            }
+        }
 
         return $this;
     }
