@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250420090138 extends AbstractMigration
+final class Version20250420111809 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -21,7 +21,7 @@ final class Version20250420090138 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
-            CREATE TABLE tag (id UUID NOT NULL, creator_id UUID NOT NULL, colour VARCHAR(255) NOT NULL, title VARCHAR(255) NOT NULL, PRIMARY KEY(id))
+            CREATE TABLE tag (id UUID NOT NULL, creator_id UUID NOT NULL, colour VARCHAR(255) NOT NULL, title VARCHAR(255) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))
         SQL);
         $this->addSql(<<<'SQL'
             CREATE INDEX IDX_389B78361220EA6 ON tag (creator_id)
@@ -31,6 +31,12 @@ final class Version20250420090138 extends AbstractMigration
         SQL);
         $this->addSql(<<<'SQL'
             COMMENT ON COLUMN tag.creator_id IS '(DC2Type:uuid)'
+        SQL);
+        $this->addSql(<<<'SQL'
+            COMMENT ON COLUMN tag.created_at IS '(DC2Type:datetime_immutable)'
+        SQL);
+        $this->addSql(<<<'SQL'
+            COMMENT ON COLUMN tag.updated_at IS '(DC2Type:datetime_immutable)'
         SQL);
         $this->addSql(<<<'SQL'
             CREATE TABLE task (id UUID NOT NULL, owner_id UUID NOT NULL, parent_id UUID DEFAULT NULL, title VARCHAR(255) NOT NULL, description TEXT DEFAULT NULL, deadline TIMESTAMP(0) WITH TIME ZONE DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, completed BOOLEAN NOT NULL, PRIMARY KEY(id))
@@ -57,13 +63,19 @@ final class Version20250420090138 extends AbstractMigration
             COMMENT ON COLUMN task.updated_at IS '(DC2Type:datetime_immutable)'
         SQL);
         $this->addSql(<<<'SQL'
-            CREATE TABLE "user" (id UUID NOT NULL, email VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, username VARCHAR(100) NOT NULL, PRIMARY KEY(id))
+            CREATE TABLE "user" (id UUID NOT NULL, email VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, username VARCHAR(100) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))
         SQL);
         $this->addSql(<<<'SQL'
             CREATE UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL ON "user" (email)
         SQL);
         $this->addSql(<<<'SQL'
             COMMENT ON COLUMN "user".id IS '(DC2Type:uuid)'
+        SQL);
+        $this->addSql(<<<'SQL'
+            COMMENT ON COLUMN "user".created_at IS '(DC2Type:datetime_immutable)'
+        SQL);
+        $this->addSql(<<<'SQL'
+            COMMENT ON COLUMN "user".updated_at IS '(DC2Type:datetime_immutable)'
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE tag ADD CONSTRAINT FK_389B78361220EA6 FOREIGN KEY (creator_id) REFERENCES "user" (id) NOT DEFERRABLE INITIALLY IMMEDIATE
