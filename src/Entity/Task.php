@@ -57,10 +57,18 @@ class Task
     #[Groups(['task'])]
     private Collection $subTasks;
 
+    /**
+     * @var Collection<int, Tag>
+     */
+    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'tasks')]
+    #[Groups(['task'])]
+    private Collection $tags;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable('now');
         $this->subTasks = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     public function getId(): ?Uuid
@@ -190,6 +198,30 @@ class Task
     public function setParent(?self $parent): static
     {
         $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    public function getTags(): Collection
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag): static
+    {
+        if (!$this->tags->contains($tag)) {
+            $this->tags->add($tag);
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): static
+    {
+        $this->tags->removeElement($tag);
 
         return $this;
     }
