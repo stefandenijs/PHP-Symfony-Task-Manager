@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\TagRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
 class Tag
@@ -14,6 +15,8 @@ class Tag
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\Regex('/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/g', message: 'Tag colour should match a hex colour value')]
+    #[Assert\NotBlank(message: 'Tag colour is required')]
     private ?string $colour = null;
 
     #[ORM\ManyToOne(inversedBy: 'Tags')]
@@ -21,6 +24,7 @@ class Tag
     private ?User $creator = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Tag title is required')]
     private ?string $title = null;
 
     public function getId(): ?int
