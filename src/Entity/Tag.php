@@ -4,15 +4,18 @@ namespace App\Entity;
 
 use App\Repository\TagRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
 class Tag
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    private ?Uuid $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\Regex('/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/g', message: 'Tag colour should match a hex colour value')]
@@ -27,7 +30,7 @@ class Tag
     #[Assert\NotBlank(message: 'Tag title is required')]
     private ?string $title = null;
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }
