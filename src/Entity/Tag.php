@@ -18,18 +18,19 @@ class Tag
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    #[Groups(['tag'])]
+    #[Groups(['tag', 'task'])]
     private ?Uuid $id = null;
     #[ORM\Column(length: 255)]
     #[Assert\Regex('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3}$)/', message: 'Tag colour should match a hex colour value')]
     #[Assert\NotBlank(message: 'Tag colour is required')]
-    #[Groups(['tag'])]
+    #[Groups(['tag', 'task'])]
     private ?string $colour = null;
     #[ORM\ManyToOne(inversedBy: 'Tags')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $creator = null;
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'Tag title is required')]
+    #[Groups(['tag', 'task'])]
     private ?string $name = null;
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt;
