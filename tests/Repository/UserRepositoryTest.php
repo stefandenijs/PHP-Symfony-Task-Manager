@@ -3,13 +3,13 @@
 namespace App\Tests\Repository;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Repository\UserRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserRepositoryTest extends KernelTestCase
 {
-    private UserRepository $userRepository;
+    private UserRepositoryInterface $userRepository;
     private UserPasswordHasherInterface $passwordHasher;
 
 
@@ -17,7 +17,7 @@ class UserRepositoryTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $this->userRepository = self::getContainer()->get(UserRepository::class);
+        $this->userRepository = self::getContainer()->get(UserRepositoryInterface::class);
         $this->passwordHasher = self::getContainer()->get(UserPasswordHasherInterface::class);
     }
 

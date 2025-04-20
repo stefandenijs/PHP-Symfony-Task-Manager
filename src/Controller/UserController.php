@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Uid\Uuid;
 
 final class UserController extends AbstractController
 {
@@ -25,9 +26,9 @@ final class UserController extends AbstractController
         description: 'ID of the user',
         in: 'path',
         required: true,
-        schema: new OA\Schema(type: 'integer')
+        schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
-    public function getUserById(int $id, SerializerInterface $serializer, UserRepositoryInterface $userRepository): JsonResponse
+    public function getUserById(Uuid $id, SerializerInterface $serializer, UserRepositoryInterface $userRepository): JsonResponse
     {
         $user = $userRepository->find($id);
 
@@ -40,21 +41,14 @@ final class UserController extends AbstractController
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
 
-    #[Route('/api/user/{id}', name: 'api_user_update', methods: ['PUT'])]
+    #[Route('/api/user/', name: 'api_user_update', methods: ['PUT'])]
     #[OA\Put(
-        path: '/api/user/{id}',
+        path: '/api/user/',
         summary: 'Update an user by ID',
         tags: ['User']
     )]
-    #[OA\Parameter(
-        name: 'id',
-        description: 'ID of the user',
-        in: 'path',
-        required: true,
-        schema: new OA\Schema(type: 'integer')
-    )]
     #[OA\RequestBody(
-        description: 'Update an user by ID',
+        description: 'Updates the current user',
         required: true,
         content: new OA\JsonContent(
             required: ['username'],
@@ -67,15 +61,16 @@ final class UserController extends AbstractController
             ],
         )
     )]
-    public function editUser(Request $request, int $id, UserRepositoryInterface $userRepository): JsonResponse|RedirectResponse
+    public function editUser(Request $request, UserRepositoryInterface $userRepository): JsonResponse|RedirectResponse
     {
         $currentUser = $this->getUser();
-        $userToUpdate = $userRepository->find($id);
+        $userToUpdate = $userRepository->find($currentUser->getId());
 
         if (!$userToUpdate) {
             return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
+        // Keep the check just in case.
         if ($currentUser->getId() !== $userToUpdate->getId()) {
             return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
@@ -87,8 +82,9 @@ final class UserController extends AbstractController
             $userToUpdate->setUsername($username);
         }
 
+        $userToUpdate->setUpdatedAt(new \DateTimeImmutable('now'));
         $userRepository->createOrUpdate($userToUpdate);
 
-        return $this->redirectToRoute('api_user_get', ['id' => $id], 303);
+        return $this->redirectToRoute('api_user_get', ['id' => $userToUpdate->getId()], Response::HTTP_SEE_OTHER);
     }
 }

@@ -3,29 +3,27 @@
 namespace App\Tests\Repository;
 
 use App\Entity\Task;
-use App\Repository\TaskRepository;
-use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\TaskRepositoryInterface;
+use App\Repository\UserRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class TaskRepositoryTest extends KernelTestCase
 {
-    private TaskRepository $taskRepository;
-    private UserRepository $userRepository;
+    private TaskRepositoryInterface $taskRepository;
+    private UserRepositoryInterface $userRepository;
 
     public function setUp(): void
     {
         self::bootKernel();
 
-        $this->taskRepository = self::getContainer()->get(TaskRepository::class);
-        $this->userRepository = self::getContainer()->get(UserRepository::class);
-
+        $this->taskRepository = self::getContainer()->get(TaskRepositoryInterface::class);
+        $this->userRepository = self::getContainer()->get(UserRepositoryInterface::class);
     }
 
     public function testCreate(): Task
     {
         // Arrange
-        $user = $this->userRepository->findOneByEmail("test@test.com");
+        $user = $this->userRepository->findOneByEmail("bob@test.com");
         $task = new Task();
         $task->setTitle("Create Task");
         $task->setDescription("Create Task");
