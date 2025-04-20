@@ -26,50 +26,48 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[Groups(['task', 'task_owner', 'user'])]
     private ?Uuid $id = null;
-
     #[ORM\Column(length: 180)]
     #[Assert\Email(message: 'Invalid email address')]
     #[Assert\NotBlank(message: 'Email address is required')]
     #[Groups(['user'])]
     private ?string $email = null;
-
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
     private array $roles = [];
-
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
     private ?string $password = null;
-
     #[Assert\PasswordStrength(
         ['minScore' => PasswordStrength::STRENGTH_MEDIUM]
     )]
     #[Assert\NotBlank(message: 'Password is required')]
     private ?string $plainPassword = null;
-
     /**
      * @var Collection<int, Task>
      */
     #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'owner', orphanRemoval: true)]
     private Collection $tasks;
-
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Username is required')]
     #[Groups(['user'])]
     private ?string $username = null;
-
     /**
      * @var Collection<int, Tag>
      */
     #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'creator', orphanRemoval: true)]
     private Collection $Tags;
+    #[ORM\Column]
+    private ?\DateTimeImmutable $createdAt;
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()
     {
+        $this->createdAt = new \DateTimeImmutable('now');
         $this->tasks = new ArrayCollection();
         $this->Tags = new ArrayCollection();
     }
@@ -236,6 +234,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $tag->setCreator(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
