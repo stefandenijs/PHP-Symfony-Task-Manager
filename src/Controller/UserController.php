@@ -45,7 +45,7 @@ final class UserController extends AbstractController
     #[Route('/api/user/', name: 'api_user_update', methods: ['PUT'])]
     #[OA\Put(
         path: '/api/user/',
-        summary: 'Update an user by ID',
+        summary: 'Update the current logged in user',
         tags: ['User']
     )]
     #[OA\RequestBody(
