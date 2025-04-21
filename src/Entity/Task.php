@@ -64,6 +64,9 @@ class Task
     #[Groups(['task'])]
     private Collection $tags;
 
+    #[ORM\ManyToOne(inversedBy: 'tasks')]
+    private ?TaskList $taskList = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable('now');
@@ -222,6 +225,18 @@ class Task
     public function removeTag(Tag $tag): static
     {
         $this->tags->removeElement($tag);
+
+        return $this;
+    }
+
+    public function getTaskList(): ?TaskList
+    {
+        return $this->taskList;
+    }
+
+    public function setTaskList(?TaskList $taskList): static
+    {
+        $this->taskList = $taskList;
 
         return $this;
     }
