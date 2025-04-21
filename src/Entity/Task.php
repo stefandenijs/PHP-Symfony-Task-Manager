@@ -67,6 +67,7 @@ class Task
     private Collection $tags;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?TaskList $taskList = null;
 
     public function __construct()

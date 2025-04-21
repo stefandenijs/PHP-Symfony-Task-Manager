@@ -137,7 +137,7 @@ final class TaskControllerTest extends WebTestCase
         $client->request('POST', "/api/task?parent={$parentTask->getId()}", content: json_encode($testData));
 
         // Assert
-        $newTaskRes = $taskRepository->findOneBy(['parent' => "{$parentTask->getId()}"]);
+        $newTaskRes = $taskRepository->findOneBy(['parent' => "{$parentTask->getId()}", 'title' => 'SubTask 22']);
         $this->assertNotNull($newTaskRes);
         $this->assertResponseRedirects("/api/task/{$newTaskRes->getId()}");
         $this->assertEquals($testData['title'], $newTaskRes->getTitle());
