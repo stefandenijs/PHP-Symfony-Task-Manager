@@ -95,9 +95,9 @@ final class TaskListController extends AbstractController
         $taskList->setName($name);
         $taskList->setOwner($user);
 
-        $validationResponse = $validatorService->validate($taskList);
+        $validationResponse = $validatorService->validate($taskList, null, ['list']);
         if ($validationResponse !== null) {
-            return new JsonResponse($validationResponse, Response::HTTP_BAD_REQUEST);
+            return $validationResponse;
         }
 
         $taskListRepository->createOrUpdate($taskList);

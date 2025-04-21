@@ -22,7 +22,7 @@ class TaskList
     private ?Uuid $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: 'List name is required')]
+    #[Assert\NotBlank(message: 'Task list name is required', groups: ['list'])]
     #[Groups(['list'])]
     private ?string $name = null;
 
@@ -52,7 +52,7 @@ class TaskList
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(?string $name): static
     {
         $this->name = $name;
 
