@@ -7,7 +7,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TaskListRepository::class)]
 class TaskList
@@ -16,9 +18,12 @@ class TaskList
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[Groups(['list'])]
     private ?Uuid $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'List name is required')]
+    #[Groups(['list'])]
     private ?string $name = null;
 
     #[ORM\ManyToOne(inversedBy: 'taskLists')]
@@ -29,6 +34,7 @@ class TaskList
      * @var Collection<int, Task>
      */
     #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'taskList')]
+    #[Groups(['list'])]
     private Collection $tasks;
 
     public function __construct()
@@ -56,6 +62,12 @@ class TaskList
     public function getOwner(): ?User
     {
         return $this->owner;
+    }
+
+    #[Groups(['list'])]
+    public function getOwnerId(): ?Uuid
+    {
+        return $this->owner?->getId();
     }
 
     public function setOwner(?User $owner): static
