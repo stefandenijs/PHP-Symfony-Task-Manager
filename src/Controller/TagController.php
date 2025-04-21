@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Tag;
 use App\Repository\TagRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
+use DateTimeImmutable;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -187,7 +188,7 @@ final class TagController extends AbstractController
             return $validationResponse;
         }
 
-        $tag->setUpdatedAt(new \DateTimeImmutable('now'));
+        $tag->setUpdatedAt(new DateTimeImmutable('now'));
         $tagRepository->createOrUpdate($tag);
         return $this->redirectToRoute('api_tag_get', ['id' => $id], Response::HTTP_SEE_OTHER);
     }

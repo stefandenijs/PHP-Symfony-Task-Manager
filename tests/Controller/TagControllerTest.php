@@ -3,10 +3,8 @@
 namespace App\Tests\Controller;
 
 use App\Repository\TagRepositoryInterface;
-use App\Repository\TaskRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Uid\Uuid;
 
 final class TagControllerTest extends WebTestCase

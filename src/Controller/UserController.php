@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\UserRepositoryInterface;
+use DateTimeImmutable;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -82,7 +83,7 @@ final class UserController extends AbstractController
             $userToUpdate->setUsername($username);
         }
 
-        $userToUpdate->setUpdatedAt(new \DateTimeImmutable('now'));
+        $userToUpdate->setUpdatedAt(new DateTimeImmutable('now'));
         $userRepository->createOrUpdate($userToUpdate);
 
         return $this->redirectToRoute('api_user_get', ['id' => $userToUpdate->getId()], Response::HTTP_SEE_OTHER);

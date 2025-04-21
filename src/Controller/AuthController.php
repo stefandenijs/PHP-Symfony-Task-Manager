@@ -55,7 +55,7 @@ final class AuthController extends AbstractController
         $user->setUsername($username);
         $user->setPlainPassword($password);
 
-        $validationResponse = $validatorService->validate($user, null, null);
+        $validationResponse = $validatorService->validate($user);
         if ($validationResponse !== null) {
             return $validationResponse;
         }
