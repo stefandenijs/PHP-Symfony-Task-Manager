@@ -7,6 +7,8 @@ use App\Entity\Task;
 use App\Repository\TagRepositoryInterface;
 use App\Repository\TaskRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
+use DateTime;
+use DateTimeImmutable;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,6 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Uid\Uuid;
+use Throwable;
 
 // TODO: Add response documentation.
 final class TaskController extends AbstractController
@@ -26,13 +29,28 @@ final class TaskController extends AbstractController
         summary: 'Get all tasks from an user',
         tags: ['Task']
     )]
-    public function getTasks(TaskRepositoryInterface $taskRepository, SerializerInterface $serializer): JsonResponse
+    public function getTasks(SerializerInterface $serializer): JsonResponse
     {
         $user = $this->getUser();
 
-        $tasks = $taskRepository->findBy(['owner' => $user->getId()]);
-        $response = $serializer->serialize($tasks, 'json', ['groups' => ['task', 'task_owner']]);
+        $tasks = $user->getTasks();
+        $parentTasks = [];
+        $taskMap = [];
 
+        foreach ($tasks as $task) {
+            $taskMap[$task->getId()->toRfc4122()] = $task;
+        }
+
+        foreach ($tasks as $task) {
+            if ($task->getParent() === null) {
+                $parentTasks[] = $task;
+            } else {
+                $parentTask = $taskMap[$task->getParent()->getId()->toRfc4122()];
+                $parentTask->addSubTask($task);
+            }
+        }
+
+        $response = $serializer->serialize($parentTasks, 'json', ['groups' => ['task', 'task_owner', 'task_parent']]);
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
 
@@ -62,7 +80,7 @@ final class TaskController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], status: Response::HTTP_FORBIDDEN);
         }
 
-        $response = $serializer->serialize($task, 'json', ['groups' => ['task_single', 'task_owner']]);
+        $response = $serializer->serialize($task, 'json', ['groups' => ['task_single', 'task_owner', 'task_parent']]);
 
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
     }
@@ -101,17 +119,22 @@ final class TaskController extends AbstractController
     public function createTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
 
-        $title = $request->getPayload()->get('title');
-        $description = $request->getPayload()->get('description');
-        $deadline = $request->getPayload()->get('deadline');
-        $parentId = $request->query->get('parent');
+        $title = $data['title'] ?? null;
+        $description = $data['description'] ?? null;
+        $deadline = $data['deadline'] ?? null;
+        $parentId = $request->query->get('parent') ?? null;
 
         $task = new Task();
         $task->setTitle($title);
-        $task->setDescription($description);
-        $task->setDeadline($deadline ? new \DateTime($deadline) : null);
-        $task->setCreatedAt(new \DateTimeImmutable('now'));
+        if (!empty($description)) {
+            $task->setDescription($description);
+        }
+        if (!empty($deadline)) {
+            $task->setDeadline(new DateTime($deadline));
+        }
+        $task->setCreatedAt(new DateTimeImmutable('now'));
         $task->setOwner($user);
 
         $validationResponse = $validatorService->validate($task, null, ['task']);
@@ -202,6 +225,7 @@ final class TaskController extends AbstractController
     public function editTask(TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, Uuid $id, Request $request): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
 
         $task = $taskRepository->find($id);
         if (!$task) {
@@ -212,10 +236,10 @@ final class TaskController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
-        $title = $request->getPayload()->get('title');
-        $description = $request->getPayload()->get('description');
-        $deadline = $request->getPayload()->get('deadline');
-        $complete = $request->getPayload()->get('completed');
+        $title = $data['title'] ?? null;
+        $description = $data['description'] ?? null;
+        $deadline = $data['deadline'] ?? null;
+        $complete = $data['completed'] ?? null;
 
         if (!empty($title)) {
             $task->setTitle($title);
@@ -224,7 +248,7 @@ final class TaskController extends AbstractController
             $task->setDescription($description);
         }
         if (!empty($deadline)) {
-            $task->setDeadline(new \DateTime($deadline));
+            $task->setDeadline(new DateTime($deadline));
         }
         if (!empty($complete)) {
             $task->setCompleted($complete);
@@ -235,7 +259,7 @@ final class TaskController extends AbstractController
             return $validationResponse;
         }
 
-        $task->setUpdatedAt(new \DateTimeImmutable('now'));
+        $task->setUpdatedAt(new DateTimeImmutable('now'));
         $taskRepository->createOrUpdate($task);
 
         return $this->redirectToRoute('api_task_get', ['id' => $task->getId()], Response::HTTP_SEE_OTHER);
@@ -320,7 +344,8 @@ final class TaskController extends AbstractController
                     return new JsonResponse(['error' => 'Each tag must have both name and colour'], Response::HTTP_BAD_REQUEST);
                 }
 
-                $tag = $tagRepository->findOneBy(['name' => $tagData['name']]);if (!$tag) {
+                $tag = $tagRepository->findOneBy(['name' => $tagData['name'], 'creator' => $user->getId()]);
+                if (!$tag) {
                     $tag = new Tag();
                     $tag->setCreator($user);
                 } else if ($tag->getCreator() !== $user) {
@@ -355,7 +380,7 @@ final class TaskController extends AbstractController
 
             return new JsonResponse(['success' => 'Tags assigned successfully'], Response::HTTP_OK);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $em->rollback();
             return new JsonResponse([
                 'error' => 'Something went wrong',
@@ -460,7 +485,7 @@ final class TaskController extends AbstractController
 
             return new JsonResponse(['success' => 'Tags removed successfully'], Response::HTTP_OK);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $em->rollback();
             return new JsonResponse([
                 'error' => 'Something went wrong',

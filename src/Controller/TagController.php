@@ -24,11 +24,11 @@ final class TagController extends AbstractController
         summary: 'Get all tags from an user',
         tags: ['Tag']
     )]
-    public function getTags(TagRepositoryInterface $tagRepository, SerializerInterface $serializer): JsonResponse
+    public function getTags(SerializerInterface $serializer): JsonResponse
     {
         $user = $this->getUser();
 
-        $tags = $tagRepository->findBy(['creator' => $user->getId()]);
+        $tags = $user->getTags();
         $response = $serializer->serialize($tags, 'json', ['groups' => ['tag']]);
 
         return JsonResponse::fromJsonString($response, Response::HTTP_OK);
@@ -90,9 +90,10 @@ final class TagController extends AbstractController
     public function createTag(Request $request, TagRepositoryInterface $tagRepository, ValidatorServiceInterface $validatorService): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
 
-        $name = $request->getPayload()->get('name');
-        $colour = $request->getPayload()->get('colour');
+        $name = $data['name'] ?? null;
+        $colour = $data['colour'] ?? null;
 
         $newTag = new Tag();
         $newTag->setName($name);
@@ -163,6 +164,8 @@ final class TagController extends AbstractController
     public function editTag(Request $request, Uuid $id, TagRepositoryInterface $tagRepository, ValidatorServiceInterface $validatorService): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
+        $data = json_decode($request->getContent());
+
         $tag = $tagRepository->find($id);
 
         if ($tag === null) {
@@ -173,8 +176,8 @@ final class TagController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
-        $name = $request->getPayload()->get('name');
-        $colour = $request->getPayload()->get('colour');
+        $name = $data['name'] ?? null;
+        $colour = $data['colour'] ?? null;
 
         if (!empty($name)) {
             $tag->setTitle($name);
