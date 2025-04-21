@@ -102,47 +102,46 @@ final class TaskControllerTest extends WebTestCase
     {
         // Arrange
         $client = $this->client;
-        $serializer = $this->serializer;
         $taskRepository = $this->taskRepository;
 
-        $task = new Task();
-        $task->setTitle('Task 21');
-        $task->setDescription('Task description 21');
+        $testData = [
+            'title' => 'Task 21',
+            'description' => 'Task description 21',
+        ];
 
         // Act
-        $newTask = $serializer->serialize($task, 'json');
-        $client->request('POST', '/api/task', content: $newTask);
+        $client->request('POST', '/api/task', content: json_encode($testData));
 
         // Assert
         $newTaskRes = $taskRepository->findOneBy(['title' => 'Task 21']);
         $this->assertResponseRedirects("/api/task/{$newTaskRes->getId()}");
         $this->assertNotNull($newTaskRes);
-        $this->assertEquals($task->getTitle(), $newTaskRes->getTitle());
-        $this->assertEquals($task->getDescription(), $newTaskRes->getDescription());
+        $this->assertEquals($testData['title'], $newTaskRes->getTitle());
+        $this->assertEquals($testData['description'], $newTaskRes->getDescription());
     }
 
     public function testCreateSubTask(): void
     {
         // Arrange
         $client = $this->client;
-        $serializer = $this->serializer;
         $taskRepository = $this->taskRepository;
 
         $parentTask = $taskRepository->findOneBy(['title' => 'Task 1']);
-        $task = new Task();
-        $task->setTitle('SubTask 22');
-        $task->setDescription('Subtask description 22');
+
+        $testData = [
+            'title' => 'SubTask 22',
+            'description' => 'Subtask description 22',
+        ];
 
         // Act
-        $newTask = $serializer->serialize($task, 'json');
-        $client->request('POST', "/api/task?parent={$parentTask->getId()}", content: $newTask);
+        $client->request('POST', "/api/task?parent={$parentTask->getId()}", content: json_encode($testData));
 
         // Assert
         $newTaskRes = $taskRepository->findOneBy(['parent' => "{$parentTask->getId()}"]);
         $this->assertNotNull($newTaskRes);
         $this->assertResponseRedirects("/api/task/{$newTaskRes->getId()}");
-        $this->assertEquals($task->getTitle(), $newTaskRes->getTitle());
-        $this->assertEquals($task->getDescription(), $newTaskRes->getDescription());
+        $this->assertEquals($testData['title'], $newTaskRes->getTitle());
+        $this->assertEquals($testData['description'], $newTaskRes->getDescription());
         $this->assertEquals($parentTask->getId(), $newTaskRes->getParent()->getId());
     }
 
@@ -207,13 +206,11 @@ final class TaskControllerTest extends WebTestCase
     {
         // Arrange
         $client = $this->client;
-        $serializer = $this->serializer;
-        $task = new Task();
-        $task->setDescription('Task description 21');
+
+        $testData = json_encode(['description' => 'Task description 21']);
 
         // Act
-        $newTask = $serializer->serialize($task, 'json');
-        $client->request('POST', '/api/task', content: $newTask);
+        $client->request('POST', '/api/task', content: $testData);
 
         // Assert
         $response = json_decode($client->getResponse()->getContent(), true);
@@ -222,6 +219,9 @@ final class TaskControllerTest extends WebTestCase
         assert($response[0]['message'] === 'A valid task title is required');
     }
 
+    /**
+     * @depends testCreateTask
+     */
     public function testUpdateTask(): void
     {
         // Arrange
@@ -231,38 +231,36 @@ final class TaskControllerTest extends WebTestCase
 
         $task = $taskRepository->findOneBy(['title' => 'Task 21']);
         $id = $task->getId();
-        $updatedTask = new Task();
-        $updatedTask->setTitle('Task 21 new');
-        $updatedTask->setDescription('Task description 21 new');
+
+        $testData = [
+            'title' => 'Task 21 new',
+            'description' => 'Task description 21 new',
+        ];
 
         // Act
-        $requestUpdatedTask = $serializer->serialize($updatedTask, 'json');
-        $client->request('PUT', "/api/task/$id", content: $requestUpdatedTask);
+        $client->request('PUT', "/api/task/$id", content: json_encode($testData));
 
         // Assert
         $updatedTaskRes = $taskRepository->findOneBy(['title' => 'Task 21 new']);
         $this->assertResponseRedirects("/api/task/$id");
         $this->assertNotNull($updatedTaskRes);
-        $this->assertEquals($updatedTask->getTitle(), $updatedTaskRes->getTitle());
-        $this->assertEquals($updatedTask->getDescription(), $updatedTaskRes->getDescription());
+        $this->assertEquals($testData['title'], $updatedTaskRes->getTitle());
+        $this->assertEquals($testData['description'], $updatedTaskRes->getDescription());
     }
 
     public function testUpdateTaskNotOwner(): void
     {
         // Arrange
         $client = $this->client;
-        $serializer = $this->serializer;
         $taskRepository = $this->taskRepository;
 
         $task = $taskRepository->findOneBy(['title' => 'Task 20']);
         $id = $task->getId();
-        $updatedTask = new Task();
-        $updatedTask->setTitle('Task 20 new');
-        $updatedTask->setDescription('Task description 20 new');
+
+        $testData = json_encode(['title' => 'Task 20 new', 'description' => 'Task description 21']);
 
         // Act
-        $requestUpdatedTask = $serializer->serialize($updatedTask, 'json');
-        $client->request('PUT', "/api/task/$id", content: $requestUpdatedTask);
+        $client->request('PUT', "/api/task/$id", content: $testData);
         $response = json_decode($client->getResponse()->getContent(), true);
 
         // Assert
@@ -285,6 +283,9 @@ final class TaskControllerTest extends WebTestCase
         assert($response['error'] === 'Task not found');
     }
 
+    /**
+     * @depends testUpdateTask
+     */
     public function testDeleteTask(): void
     {
         // Arrange
