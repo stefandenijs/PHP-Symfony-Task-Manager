@@ -43,7 +43,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseIsSuccessful();
-        $this->assertCount(10, $tasks);
+        $this->assertCount(25, $tasks);
         assert($tasks[0]["title"] === 'Task 1');
         assert($tasks[0]["description"] === 'Task description 1');
     }

@@ -22,15 +22,15 @@ class Tag
     #[Groups(['tag', 'task'])]
     private ?Uuid $id = null;
     #[ORM\Column(length: 255)]
-    #[Assert\Regex('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3}$)/', message: 'Tag colour should match a hex colour value')]
-    #[Assert\NotBlank(message: 'Tag colour is required')]
+    #[Assert\Regex('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3}$)/', message: 'Tag colour should match a hex colour value', groups: ['tag'])]
+    #[Assert\NotBlank(message: 'Tag colour is required', groups: ['tag'])]
     #[Groups(['tag', 'task'])]
     private ?string $colour = null;
     #[ORM\ManyToOne(inversedBy: 'Tags')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $creator = null;
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: 'Tag name is required')]
+    #[Assert\NotBlank(message: 'Tag name is required', groups: ['tag'])]
     #[Groups(['tag', 'task'])]
     private ?string $name = null;
     #[ORM\Column]
@@ -60,7 +60,7 @@ class Tag
         return $this->colour;
     }
 
-    public function setColour(string $colour): static
+    public function setColour(?string $colour): static
     {
         $this->colour = $colour;
 
@@ -84,7 +84,7 @@ class Tag
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(?string $name): static
     {
         $this->name = $name;
 

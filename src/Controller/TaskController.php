@@ -355,8 +355,7 @@ final class TaskController extends AbstractController
                 $tag->setName($tagData['name']);
                 $tag->setColour($tagData['colour']);
 
-                // TODO: Fix validation being skipped for tags, but somehow not in tests
-                $validationResponse = $validatorService->validate($tag);
+                $validationResponse = $validatorService->validate($tag, null, ['tag']);
                 if ($validationResponse !== null) {
                     return $validationResponse;
                 }

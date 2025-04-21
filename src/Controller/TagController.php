@@ -100,7 +100,7 @@ final class TagController extends AbstractController
         $newTag->setColour($colour);
         $newTag->setCreator($user);
 
-        $validationResponse = $validatorService->validate($newTag);
+        $validationResponse = $validatorService->validate($newTag, null, ['tag']);
         if ($validationResponse !== null) {
             return $validationResponse;
         }
