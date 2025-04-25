@@ -7,6 +7,7 @@ use App\Entity\TaskList;
 use App\Repository\TaskListRepositoryInterface;
 use App\Repository\TaskRepositoryInterface;
 use App\Service\ValidatorServiceInterface;
+use DateTimeImmutable;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -225,6 +226,7 @@ final class TaskListController extends AbstractController
             return $validationResponse;
         }
 
+        $taskList->setUpdatedAt(new DateTimeImmutable());
         $taskListRepository->createOrUpdate($taskList);
 
         return $this->redirectToRoute('api_task_list_get', ['id' => $taskList->getId()], Response::HTTP_SEE_OTHER);
@@ -318,6 +320,7 @@ final class TaskListController extends AbstractController
             $task->setTaskList(null);
         }
 
+        $taskList->setUpdatedAt(new DateTimeImmutable());
         $taskListRepository->createOrUpdate($taskList);
 
         return $this->redirectToRoute('api_task_list_get', ['id' => $taskList->getId()], Response::HTTP_SEE_OTHER);
