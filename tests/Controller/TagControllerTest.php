@@ -3,10 +3,8 @@
 namespace App\Tests\Controller;
 
 use App\Repository\TagRepositoryInterface;
-use App\Repository\TaskRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Uid\Uuid;
 
 final class TagControllerTest extends WebTestCase
@@ -97,7 +95,7 @@ final class TagControllerTest extends WebTestCase
         ];
 
         // Act
-        $this->client->jsonRequest('POST', '/api/tag', $data);
+        $this->client->request('POST', '/api/tag', content: json_encode($data));
 
         // Assert
         $this->assertResponseStatusCodeSame(303);
@@ -110,18 +108,20 @@ final class TagControllerTest extends WebTestCase
     public function testCreateTagValidationFails(): void
     {
         // Arrange
-        $data = [
-            'name' => 'Invalid Tag',
-            'colour' => 'not-a-colour'
-        ];
+
+        $data =
+            [
+                'name' => 'Invalid Tag',
+                'colour' => 'not-a-colour'
+            ];
 
         // Act
-        $this->client->jsonRequest('POST', '/api/tag', $data);
+        $this->client->request('POST', '/api/tag', content: json_encode($data));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
 
-        $response = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('colour', $response[0]['field']);
         $this->assertStringContainsString('Tag colour should match a hex colour value', $response[0]['message']);
     }

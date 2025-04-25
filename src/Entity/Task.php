@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TaskRepository;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -10,6 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -34,21 +37,20 @@ class Task
         // TODO: Fix this at some point that it allows to include timezone data
     #[Assert\Type(Types::DATETIME_MUTABLE, message: 'A valid task deadline is required')]
     #[groups(['task_single', 'task'])]
-    private ?\DateTimeInterface $deadline = null;
+    private ?DateTimeInterface $deadline = null;
     #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt;
+    private ?DateTimeImmutable $createdAt;
     #[ORM\Column(nullable: true)]
     #[Ignore]
-    private ?\DateTimeImmutable $updatedAt = null;
+    private ?DateTimeImmutable $updatedAt = null;
     #[ORM\Column]
     #[groups(['task_single', 'task'])]
     private ?bool $completed = false;
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['task_single', 'task', 'task_owner'])]
     private ?User $owner = null;
     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'subTasks')]
-    #[Groups(['task_single', 'task:create'])]
+    #[MaxDepth(1)]
     private ?self $parent = null;
     /**
      * @var Collection<int, self>
@@ -64,9 +66,13 @@ class Task
     #[Groups(['task'])]
     private Collection $tags;
 
+    #[ORM\ManyToOne(inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?TaskList $taskList = null;
+
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable('now');
+        $this->createdAt = new DateTimeImmutable('now');
         $this->subTasks = new ArrayCollection();
         $this->tags = new ArrayCollection();
     }
@@ -100,36 +106,36 @@ class Task
         return $this;
     }
 
-    public function getDeadline(): ?\DateTimeInterface
+    public function getDeadline(): ?DateTimeInterface
     {
         return $this->deadline;
     }
 
-    public function setDeadline(?\DateTimeInterface $deadline): static
+    public function setDeadline(?DateTimeInterface $deadline): static
     {
         $this->deadline = $deadline;
 
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
+    public function getUpdatedAt(): ?DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
+    public function setUpdatedAt(?DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
 
@@ -151,6 +157,12 @@ class Task
     public function getOwner(): ?User
     {
         return $this->owner;
+    }
+
+    #[Groups(['task_owner'])]
+    public function getOwnerId(): ?Uuid
+    {
+        return $this->owner->getId();
     }
 
     public function setOwner(?User $owner): static
@@ -195,6 +207,12 @@ class Task
         return $this->parent;
     }
 
+    #[Groups(['task_parent'])]
+    public function getParentId(): ?Uuid
+    {
+        return $this->parent?->getId();
+    }
+
     public function setParent(?self $parent): static
     {
         $this->parent = $parent;
@@ -222,6 +240,18 @@ class Task
     public function removeTag(Tag $tag): static
     {
         $this->tags->removeElement($tag);
+
+        return $this;
+    }
+
+    public function getTaskList(): ?TaskList
+    {
+        return $this->taskList;
+    }
+
+    public function setTaskList(?TaskList $taskList): static
+    {
+        $this->taskList = $taskList;
 
         return $this;
     }

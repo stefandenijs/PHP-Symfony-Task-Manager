@@ -4,8 +4,6 @@ namespace App\Tests\Repository;
 
 use App\Entity\Tag;
 use App\Repository\TagRepositoryInterface;
-use App\Repository\TaskRepository;
-use App\Repository\UserRepository;
 use App\Repository\UserRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 

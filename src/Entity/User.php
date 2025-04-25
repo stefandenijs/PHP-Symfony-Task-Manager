@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -37,7 +38,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
     /**
-     * @var string The hashed password
+     * @var ?string The hashed password
      */
     #[ORM\Column]
     private ?string $password = null;
@@ -59,17 +60,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var Collection<int, Tag>
      */
     #[ORM\OneToMany(targetEntity: Tag::class, mappedBy: 'creator', orphanRemoval: true)]
-    private Collection $Tags;
+    private Collection $tags;
     #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt;
+    private ?DateTimeImmutable $createdAt;
     #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $updatedAt = null;
+    private ?DateTimeImmutable $updatedAt = null;
+
+    /**
+     * @var Collection<int, TaskList>
+     */
+    #[ORM\OneToMany(targetEntity: TaskList::class, mappedBy: 'owner', orphanRemoval: true)]
+    private Collection $taskLists;
 
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable('now');
+        $this->createdAt = new DateTimeImmutable('now');
         $this->tasks = new ArrayCollection();
-        $this->Tags = new ArrayCollection();
+        $this->tags = new ArrayCollection();
+        $this->taskLists = new ArrayCollection();
     }
 
     public function getId(): ?Uuid
@@ -213,13 +221,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getTags(): Collection
     {
-        return $this->Tags;
+        return $this->tags;
     }
 
     public function addTag(Tag $tag): static
     {
-        if (!$this->Tags->contains($tag)) {
-            $this->Tags->add($tag);
+        if (!$this->tags->contains($tag)) {
+            $this->tags->add($tag);
             $tag->setCreator($this);
         }
 
@@ -228,7 +236,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeTag(Tag $tag): static
     {
-        if ($this->Tags->removeElement($tag)) {
+        if ($this->tags->removeElement($tag)) {
             // set the owning side to null (unless already changed)
             if ($tag->getCreator() === $this) {
                 $tag->setCreator(null);
@@ -238,26 +246,56 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
+    public function getUpdatedAt(): ?DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
+    public function setUpdatedAt(?DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TaskList>
+     */
+    public function getTaskLists(): Collection
+    {
+        return $this->taskLists;
+    }
+
+    public function addTaskList(TaskList $taskList): static
+    {
+        if (!$this->taskLists->contains($taskList)) {
+            $this->taskLists->add($taskList);
+            $taskList->setOwner($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTaskList(TaskList $taskList): static
+    {
+        if ($this->taskLists->removeElement($taskList)) {
+            // set the owning side to null (unless already changed)
+            if ($taskList->getOwner() === $this) {
+                $taskList->setOwner(null);
+            }
+        }
 
         return $this;
     }
