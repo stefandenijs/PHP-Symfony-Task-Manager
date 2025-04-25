@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Task;
 use App\Entity\TaskList;
 use App\Repository\TaskListRepositoryInterface;
 use App\Repository\TaskRepositoryInterface;
@@ -46,6 +47,7 @@ final class TaskListController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
+    // TODO: Return list with only top-level parent tasks, which includes the subtasks
     public function getListById(TaskListRepositoryInterface $taskListRepository, SerializerInterface $serializer, Uuid $id): Response
     {
         $user = $this->getUser();
@@ -132,7 +134,7 @@ final class TaskListController extends AbstractController
         }
 
         $taskListRepository->delete($taskList);
-        return new JsonResponse(['success' => 'Tag deleted successfully'], Response::HTTP_OK);
+        return new JsonResponse(['success' => 'List deleted successfully'], Response::HTTP_OK);
     }
 
     #[Route('/api/task-list/{id}', name: 'api_task_list_edit', methods: ['PUT'])]
@@ -177,6 +179,7 @@ final class TaskListController extends AbstractController
             ]
         )
     )]
+    // Could be made easier than using a recursive helper function by filtering out sub-tasks (only allowing parents) or refusing them.
     public function editList(Request $request, TaskListRepositoryInterface $taskListRepository, TaskRepositoryInterface $taskRepository, ValidatorServiceInterface $validatorService, Uuid $id): Response
     {
         $user = $this->getUser();
@@ -196,22 +199,58 @@ final class TaskListController extends AbstractController
             return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
-        $taskList->setName($name);
         foreach ($tasks as $task) {
             if ($task->getOwner()->getId() !== $user->getId()) {
                 return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
             }
+
+            if ($task->getTaskList() && $task->getTaskList()->getId() !== $taskList->getId()) {
+                return new JsonResponse(['error' => 'Task belongs to a different list'], Response::HTTP_BAD_REQUEST);
+            }
+
             $taskList->addTask($task);
+
+            $subtaskResponse = $this->moveSubtasksToList($task, $taskList);
+            if ($subtaskResponse !== null) {
+                return $subtaskResponse;
+            }
         }
 
-        $validationResponse = $validatorService->validate($taskList);
+        if (!empty($name)) {
+            $taskList->setName($name);
+        }
+
+        $validationResponse = $validatorService->validate($taskList, null, ['list']);
         if ($validationResponse !== null) {
-            return new JsonResponse($validationResponse, Response::HTTP_BAD_REQUEST);
+            return $validationResponse;
         }
 
         $taskListRepository->createOrUpdate($taskList);
 
         return $this->redirectToRoute('api_task_list_get', ['id' => $taskList->getId()], Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * Helper function to move subtasks to the same task list as the parent task
+     */
+    private function moveSubtasksToList(Task $task, TaskList $taskList): ?JsonResponse
+    {
+        foreach ($task->getSubTasks() as $subtask) {
+            if ($subtask->getTaskList() && $subtask->getTaskList()->getId() !== $taskList->getId()) {
+                return new JsonResponse(['error' => 'A subtask belongs to a different list'], Response::HTTP_BAD_REQUEST);
+            }
+
+            if ($subtask->getTaskList() !== $taskList) {
+                $subtask->setTaskList($taskList);
+            }
+
+            $subtaskResponse = $this->moveSubtasksToList($subtask, $taskList);
+            if ($subtaskResponse !== null) {
+                return $subtaskResponse;
+            }
+        }
+
+        return null;
     }
 
     #[Route('/api/task-list/{id}/tasks', name: 'api_task_list_remove_tasks', methods: ['DELETE'])]
@@ -242,7 +281,6 @@ final class TaskListController extends AbstractController
             ],
             type: 'object',
             example: [
-                'name' => 'My updated study list',
                 'taskIds' => [
                     '550e8400-e29b-41d4-a716-446655440000',
                     '550e8400-e29b-41d4-a716-446655440001',
@@ -270,11 +308,32 @@ final class TaskListController extends AbstractController
         $tasks = $taskRepository->findBy(['id' => $taskIds]);
 
         foreach ($tasks as $task) {
+            if ($task->getOwner()->getId() !== $user->getId()) {
+                return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
+            }
+
+            $this->removeSubtasksFromList($task, $taskList);
+
             $taskList->removeTask($task);
+            $task->setTaskList(null);
         }
 
         $taskListRepository->createOrUpdate($taskList);
 
         return $this->redirectToRoute('api_task_list_get', ['id' => $taskList->getId()], Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * Helper function to remove subtasks from the same task list as the parent task
+     */
+    private function removeSubtasksFromList(Task $task, TaskList $taskList): void
+    {
+        foreach ($task->getSubTasks() as $subtask) {
+            if ($subtask->getTaskList() && $subtask->getTaskList()->getId() === $taskList->getId()) {
+                $taskList->removeTask($subtask);
+                $subtask->setTaskList(null);
+                $this->removeSubtasksFromList($subtask, $taskList);
+            }
+        }
     }
 }
