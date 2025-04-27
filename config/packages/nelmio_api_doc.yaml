@@ -3,7 +3,7 @@ nelmio_api_doc:
         info:
             title: Symfony Task Manager API
             description: Web API that can create tasks for users to us as to-do's
-            version: 0.2.0
+            version: 0.8.0
         components:
             securitySchemes:
                 Bearer:
