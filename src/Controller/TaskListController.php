@@ -49,7 +49,6 @@ final class TaskListController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'string', format: 'uuid')
     )]
-    // TODO: Return list with only top-level parent tasks, which includes the subtasks
     public function getListById(TaskListRepositoryInterface $taskListRepository, SerializerInterface $serializer, Uuid $id): Response
     {
         $user = $this->getUser();
