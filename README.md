@@ -1,3 +1,5 @@
+[![Tests](https://github.com/stefandenijs/php-symfony-task-manager/actions/workflows/symfony-tests.yml/badge.svg?branch=main)](https://github.com/stefandenijs/php-symfony-task-manager/actions/workflows/symfony-tests.yml)
+
 # Symfony Task Manager
 
 The following tool is an example backend for a task managing system. The basic concept is that a user can create and manage tasks to efficiently plan their days.
