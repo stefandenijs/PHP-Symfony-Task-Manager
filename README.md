@@ -5,7 +5,7 @@
 **Symfony Task Manager** is a backend API for managing tasks, subtasks, tags, and task lists.  
 Users can create, manage, and organize their tasks to efficiently plan their days.
 
-This project was built as a solo effort to learn Symfony from scratch, and to challenge myself to design a complete, tested, and secure API following professional standards.
+This project was built as a solo effort to learn Symfony from scratch, and to challenge myself to design a complete, tested, and secure API.
 
 ---
 
