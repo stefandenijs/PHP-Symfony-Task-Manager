@@ -31,7 +31,6 @@ final class TagControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseIsSuccessful();
-
         $tags = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertIsArray($tags);
         $this->assertGreaterThan(0, count($tags));
@@ -89,13 +88,13 @@ final class TagControllerTest extends WebTestCase
     public function testCreateTag(): void
     {
         // Arrange
-        $data = [
+        $testData = [
             'name' => 'New API Tag',
             'colour' => '#123456',
         ];
 
         // Act
-        $this->client->request('POST', '/api/tag', content: json_encode($data));
+        $this->client->request('POST', '/api/tag', content: json_encode($testData));
 
         // Assert
         $this->assertResponseStatusCodeSame(303);
@@ -108,15 +107,14 @@ final class TagControllerTest extends WebTestCase
     public function testCreateTagValidationFails(): void
     {
         // Arrange
-
-        $data =
+        $testData =
             [
                 'name' => 'Invalid Tag',
                 'colour' => 'not-a-colour'
             ];
 
         // Act
-        $this->client->request('POST', '/api/tag', content: json_encode($data));
+        $this->client->request('POST', '/api/tag', content: json_encode($testData));
         $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert

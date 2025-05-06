@@ -6,7 +6,6 @@ use App\Repository\TaskListRepositoryInterface;
 use App\Repository\TaskRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Uid\Uuid;
 
 final class TaskListControllerTest extends WebTestCase
@@ -14,14 +13,12 @@ final class TaskListControllerTest extends WebTestCase
     private KernelBrowser $client;
     private TaskRepositoryInterface $taskRepository;
     private TaskListRepositoryInterface $taskListRepository;
-    private SerializerInterface $serializer;
 
     public function setUp(): void
     {
         $this->client = TaskControllerTest::createClient();
         $this->taskRepository = TaskControllerTest::getContainer()->get(TaskRepositoryInterface::class);
         $this->taskListRepository = TaskControllerTest::getContainer()->get(TaskListRepositoryInterface::class);
-        $this->serializer = TaskControllerTest::getContainer()->get(SerializerInterface::class);
         $this->client->request('POST', '/api/login', content: json_encode(['email' => 'bob@test.com', 'password' => 'testUser12345']));
 
         $data = json_decode($this->client->getResponse()->getContent(), true);

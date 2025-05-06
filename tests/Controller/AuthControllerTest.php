@@ -7,19 +7,21 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AuthControllerTest extends WebTestCase
 {
-    protected function setUpClient(): KernelBrowser
+    private KernelBrowser $client;
+
+    public function SetUp(): void
     {
-        return AuthControllerTest::createClient();
+        $this->client = AuthControllerTest::createClient();
     }
 
     public function testRegister(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'frank@test.com', 'password' => 'testUser12345@#!', 'username' => 'Frank'];
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'frank@test.com', 'password' => 'testUser12345@#!', 'username' => 'Frank']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/register', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(201);
@@ -29,14 +31,14 @@ final class AuthControllerTest extends WebTestCase
     public function testRegisterWithInvalidEmail(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'franktest.com', 'password' => 'testUser12345@#!', 'username' => 'The other Frank'];
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'franktest.com', 'password' => 'testUser12345@#!', 'username' => 'The other Frank']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/register', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert;
-        $statusCode = $client->getResponse()->getStatusCode();
+        $statusCode = $this->client->getResponse()->getStatusCode();
         $this->assertTrue(in_array($statusCode, [400, 422]));
         $this->assertArrayHasKey("field", $response[0]);
         $this->assertArrayHasKey("message", $response[0]);
@@ -48,11 +50,11 @@ final class AuthControllerTest extends WebTestCase
     public function testRegisterWithMissingEmail(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['password' => 'testUser12345@#!', 'username' => 'testUser2'];
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['password' => 'testUser12345@#!', 'username' => 'testUser2']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/register', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
@@ -66,11 +68,11 @@ final class AuthControllerTest extends WebTestCase
     public function testRegisterWithInvalidPassword(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'dave@test.com', 'password' => 'testUser!', 'username' => 'testUser2'];
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'dave@test.com', 'password' => 'testUser!', 'username' => 'testUser2']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/register', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
@@ -84,11 +86,11 @@ final class AuthControllerTest extends WebTestCase
     public function testRegisterWithMissingPassword(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'dave@test.com', 'username' => 'testUser3'];
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'dave@test.com', 'username' => 'testUser3']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/register', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
@@ -102,11 +104,11 @@ final class AuthControllerTest extends WebTestCase
     public function testRegisterWithMissingUsername(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'dave@test.com', 'password' => 'testUser12345@#!'];
 
         // Act
-        $client->request('POST', '/api/register', content: json_encode(['email' => 'dave@test.com', 'password' => 'testUser12345@#!']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/register', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
@@ -120,11 +122,11 @@ final class AuthControllerTest extends WebTestCase
     public function testLogin(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'frank@test.com', 'password' => 'testUser12345@#!'];
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'frank@test.com', 'password' => 'testUser12345@#!']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/login', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
@@ -138,11 +140,11 @@ final class AuthControllerTest extends WebTestCase
     public function testLoginInvalidCredentials(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'frank@test.com', 'password' => 'tesUser12345@#!'];
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'frank@test.com', 'password' => 'tesUser12345@#!']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/login', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(401);
@@ -155,11 +157,11 @@ final class AuthControllerTest extends WebTestCase
     public function testLoginMissingEmail(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['password' => 'tesUser12345@#!'];
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['password' => 'tesUser12345@#!']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/login', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
@@ -173,11 +175,11 @@ final class AuthControllerTest extends WebTestCase
     public function testLoginMissingPassword(): void
     {
         // Arrange
-        $client = $this->setUpClient();
+        $testData = ['email' => 'frank@test.com'];
 
         // Act
-        $client->request('POST', '/api/login', content: json_encode(['email' => 'frank@test.com']));
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/api/login', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(400);

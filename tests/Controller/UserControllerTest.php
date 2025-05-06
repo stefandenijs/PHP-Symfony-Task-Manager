@@ -27,13 +27,12 @@ final class UserControllerTest extends WebTestCase
     public function testGetUser(): void
     {
         // Arrange
-        $client = $this->client;
         $user = $this->userRepository->findOneBy(['email' => 'mike@test.com']);
         $id = $user->getId();
 
         // Act
-        $client->request('GET', "/api/user/$id");
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('GET', "/api/user/$id");
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
@@ -48,12 +47,11 @@ final class UserControllerTest extends WebTestCase
     public function testGetUserNotFound(): void
     {
         // Arrange
-        $client = $this->client;
         $fakeUuid = Uuid::v4()->toRfc4122();
 
         // Act
-        $client->request('GET', "/api/user/$fakeUuid");
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->client->request('GET', "/api/user/$fakeUuid");
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
@@ -64,7 +62,6 @@ final class UserControllerTest extends WebTestCase
     public function testEditUser(): void
     {
         // Arrange
-        $client = $this->client;
         $userRepository = $this->userRepository;
         $user = $userRepository->findOneBy(['email' => 'bob@test.com']);
 
@@ -73,7 +70,7 @@ final class UserControllerTest extends WebTestCase
         ];
 
         // Act
-        $client->request('PUT', "/api/user/", content: json_encode($userData));
+        $this->client->request('PUT', "/api/user/", content: json_encode($userData));
 
         // Assert
         $this->assertResponseRedirects("/api/user/{$user->getId()}");
