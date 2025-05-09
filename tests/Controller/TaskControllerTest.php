@@ -37,8 +37,8 @@ final class TaskControllerTest extends WebTestCase
         // Assert
         $this->assertResponseIsSuccessful();
         $this->assertCount(25, $tasks);
-        assert($tasks[0]["title"] === 'Task 1');
-        assert($tasks[0]["description"] === 'Task description 1');
+        $this->assertEquals('Task 1', $tasks[0]["title"]);
+        $this->assertEquals('Task description 1', $tasks[0]["description"]);
     }
 
     public function testGetTask(): void
@@ -53,9 +53,9 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseIsSuccessful();
-        assert($response["id"] === (string)$task->getId());
-        assert($response["title"] === 'Task 1');
-        assert($response["description"] === 'Task description 1');
+        $this->assertEquals($response["id"] , (string)$task->getId());
+        $this->assertEquals('Task 1', $response["title"]);
+        $this->assertEquals('Task description 1', $response["description"]);
     }
 
     public function testGetMissingTask(): void
@@ -69,7 +69,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
-        assert($response['error'] === 'Task not found');
+        $this->assertEquals('Task not found', $response['error']);
     }
 
     public function testGetTaskNotOwner(): void
@@ -84,7 +84,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(403);
-        assert($response['error'] === 'Forbidden to access this resource');
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
 
     }
 
@@ -136,7 +136,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
-        assert($response['error'] === 'Parent task not found');
+        $this->assertEquals('Parent task not found', $response['error']);
 
     }
 
@@ -152,7 +152,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(403);
-        assert($response['error'] === 'Forbidden to access this resource');
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
     }
 
     public function testCreateTaskWithMissingTitle(): void
@@ -166,14 +166,14 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
-        assert($response[0]['field'] === 'title');
-        assert($response[0]['message'] === 'A valid task title is required');
+        $this->assertEquals('title', $response[0]['field']);
+        $this->assertEquals('A valid task title is required', $response[0]['message']);
     }
 
     /**
      * @depends testCreateTask
      */
-    public function testUpdateTask(): void
+    public function testEditTask(): void
     {
         // Arrange
         $task = $this->taskRepository->findOneBy(['title' => 'Task 21']);
@@ -195,7 +195,7 @@ final class TaskControllerTest extends WebTestCase
         $this->assertEquals($testData['description'], $updatedTaskRes->getDescription());
     }
 
-    public function testUpdateTaskNotOwner(): void
+    public function testEditTaskNotOwner(): void
     {
         // Arrange
         $task = $this->taskRepository->findOneBy(['title' => 'Task 20']);
@@ -209,10 +209,10 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(403);
-        assert($response['error'] === 'Forbidden to access this resource');
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
     }
 
-    public function testUpdateMissingTask(): void
+    public function testEditMissingTask(): void
     {
         // Arrange
         $fakeUuid = Uuid::v4()->toRfc4122();
@@ -223,11 +223,11 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
-        assert($response['error'] === 'Task not found');
+        $this->assertEquals('Task not found', $response['error']);
     }
 
     /**
-     * @depends testUpdateTask
+     * @depends testEditTask
      */
     public function testDeleteTask(): void
     {
@@ -242,7 +242,7 @@ final class TaskControllerTest extends WebTestCase
         // Assert
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(200);
-        assert($response['success'] === 'Task deleted successfully');
+        $this->assertEquals('Task deleted successfully', $response['success']);
     }
 
     public function testDeleteTaskNotOwner(): void
@@ -257,7 +257,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(403);
-        assert($response['error'] === 'Forbidden to access this resource');
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
     }
 
 
@@ -272,7 +272,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
-        assert($response['error'] === 'Task not found');
+        $this->assertEquals('Task not found', $response['error']);
     }
 
     public function testAddTagsToTasks(): void
@@ -321,7 +321,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
-        assert($response['error'] === 'Task ids and tags are required');
+        $this->assertEquals('Task ids and tags are required', $response['error']);
     }
 
     public function testAddTagsToTasksInvalidTaskIds(): void
@@ -342,7 +342,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
-        assert($response['error'] === 'Some task ids not found');
+        $this->assertEquals('Some task ids not found', $response['error']);
     }
 
     public function testAddTagsToTasksForbiddenAccess(): void
@@ -361,7 +361,7 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(403);
-        assert($response['error'] === 'Forbidden to access this resource');
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
     }
 
     public function testAddTagsToTasksMissingTagNameOrColour(): void
@@ -379,16 +379,16 @@ final class TaskControllerTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
-        assert($response['error'] === 'Each tag must have both name and colour');
+        $this->assertEquals('Each tag must have both name and colour', $response['error']);
     }
 
     public function testAddTagsToTasksInvalidTagValidation(): void
     {
-        //
+        // Arrange
         $task = $this->taskRepository->findOneBy(['title' => 'Task 1']);
         $testData = [
             'taskIds' => [$task->getId()],
-            'tags' => [['name' => 'Urgent', 'colour' => 'invalidColour']]
+            'tags' => [['name' => 'InvalidTag', 'colour' => 'invalidColour']]
         ];
 
         // Act
@@ -397,8 +397,38 @@ final class TaskControllerTest extends WebTestCase
         // Assert
         $response = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertResponseStatusCodeSame(400);
-        assert($response[0]['field'] === 'colour');
-        assert($response[0]['message'] === 'Tag colour should match a hex colour value');
+        $this->assertEquals('colour', $response[0]['field']);
+        $this->assertEquals('Tag colour should match a hex colour value', $response[0]['message']);
+    }
+
+    public function testAddTagsToTasksDoesNotCreateExistingTag(): void
+    {
+        // Arrange
+        $task1 = $this->taskRepository->findOneBy(['title' => 'Task 1']);
+        $task2 = $this->taskRepository->findOneBy(['title' => 'Task 2']);
+        $tasks = [$task1, $task2];
+        $taskIds = array_map(fn($task) => $task->getId(), $tasks);
+
+        $tagsData = [
+            [
+                'name' => 'Urgent',
+                'colour' => '#FF0000'
+            ]
+        ];
+
+        $testData = [
+            'taskIds' => $taskIds,
+            'tags' => $tagsData
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task/assign-tags', content: json_encode($testData));
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(409);
+        $this->assertArrayHasKey('error', $responseContent);
+        $this->assertEquals("A tag with this name already exists: {$tagsData[0]['name']}", $responseContent['error']);
     }
 
     public function testRemoveTagsFromTasks(): void

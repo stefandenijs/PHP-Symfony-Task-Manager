@@ -82,7 +82,7 @@ final class TagController extends AbstractController
             ],
             type: 'object',
             example: [
-                'title' => 'My new tag',
+                'name' => 'My new tag',
                 'colour' => '#4287f5',
             ]
         )
@@ -95,11 +95,15 @@ final class TagController extends AbstractController
         $name = $data['name'] ?? null;
         $colour = $data['colour'] ?? null;
 
+        $tagCheck = $tagRepository->findOneBy(['name' => $name, 'creator' => $user]);
+        if ($tagCheck !== null) {
+            return new JsonResponse(['error' => 'A tag with this name already exists'], Response::HTTP_CONFLICT);
+        }
+
         $newTag = new Tag();
         $newTag->setName($name);
         $newTag->setColour($colour);
         $newTag->setCreator($user);
-
         $validationResponse = $validatorService->validate($newTag, null, ['tag']);
         if ($validationResponse !== null) {
             return $validationResponse;
@@ -164,23 +168,27 @@ final class TagController extends AbstractController
     public function editTag(Request $request, Uuid $id, TagRepositoryInterface $tagRepository, ValidatorServiceInterface $validatorService): JsonResponse|RedirectResponse
     {
         $user = $this->getUser();
-        $data = json_decode($request->getContent());
+        $data = json_decode($request->getContent(), true);
+
+        $name = $data['name'] ?? null;
+        $colour = $data['colour'] ?? null;
 
         $tag = $tagRepository->find($id);
-
         if ($tag === null) {
             return new JsonResponse(['error' => 'Tag not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $tagCheck = $tagRepository->findOneBy(['name' => $name, 'creator' => $user]);
+        if ($tagCheck !== null) {
+            return new JsonResponse(['error' => 'A tag with this name already exists'], Response::HTTP_CONFLICT);
         }
 
         if ($tag->getCreator()->getId() !== $user->getId()) {
             return new JsonResponse(['error' => 'Forbidden to access this resource'], Response::HTTP_FORBIDDEN);
         }
 
-        $name = $data['name'] ?? null;
-        $colour = $data['colour'] ?? null;
-
         if (!empty($name)) {
-            $tag->setTitle($name);
+            $tag->setName($name);
         }
         if (!empty($colour)) {
             $tag->setColour($colour);
