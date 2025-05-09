@@ -127,6 +127,23 @@ final class TaskListControllerTest extends WebTestCase
         $this->assertEquals('Task list name is required', $response[0]['message']);
     }
 
+    public function testCreateTaskListAlreadyExists()
+    {
+        // Arrange
+        $testData = [
+            'name' => 'List 2',
+        ];
+
+        // Act
+        $this->client->request('POST', '/api/task-list', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertEquals(409, $this->client->getResponse()->getStatusCode());
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('A list with this name already exists', $response['error']);
+    }
+
     /**
      * @depends testEditListSuccessfully
      */
@@ -271,6 +288,24 @@ final class TaskListControllerTest extends WebTestCase
         $this->assertIsArray($response);
         $this->assertArrayHasKey('error', $response);
         $this->assertEquals('Forbidden to access this resource', $response['error']);
+    }
+
+    public function testEditTaskListWithNameAlreadyExists()
+    {
+        // Arrange
+        $taskListId = $this->taskListRepository->findOneBy(['name' => 'List 1'])->getId();
+        $testData = [
+            'name' => 'List 2',
+        ];
+
+        // Act
+        $this->client->request('PUT', "/api/task-list/$taskListId", content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertEquals(409, $this->client->getResponse()->getStatusCode());
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('A list with this name already exists', $response['error']);
     }
 
     // TODO: Functionally useless for now as the name is never passed due to a null check, so it never hits the validator, which for now is the only invalid state.
