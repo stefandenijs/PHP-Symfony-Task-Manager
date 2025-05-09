@@ -94,6 +94,11 @@ final class TaskListController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $name = $data['name'] ?? null;
 
+        $taskListCheck = $taskListRepository->findOneBy(['name' => $name, 'owner' => $user]);
+        if ($taskListCheck !== null) {
+            new JsonResponse(['error' => 'A list with this name already exists'], Response::HTTP_CONFLICT);
+        }
+
         $taskList = new TaskList();
         $taskList->setName($name);
         $taskList->setOwner($user);
@@ -188,6 +193,11 @@ final class TaskListController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $name = $data['name'] ?? null;
         $taskIds = $data['taskIds'] ?? [];
+
+        $taskListCheck = $taskListRepository->findOneBy(['name' => $name, 'owner' => $user]);
+        if ($taskListCheck !== null) {
+            new JsonResponse(['error' => 'A list with this name already exists'], Response::HTTP_CONFLICT);
+        }
 
         $tasks = new ArrayCollection($taskRepository->findBy(['id' => $taskIds]));
 
