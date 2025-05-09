@@ -15,7 +15,7 @@ This project was built as a solo effort to learn Symfony from scratch, and to ch
 - **Language**: PHP 8.2
 - **Database**: PostgreSQL (via Docker)
 - **Authentication**: JWT (LexikJWTAuthenticationBundle)
-- **Testing**: PHPUnit (76 tests, 223 assertions)
+- **Testing**: PHPUnit (83 tests, 267 assertions)
 - **Continuous Integration**: GitHub Actions (automated test runs on push/PR)
 - **Documentation**: NelmioApiDocBundle (OpenAPI 3)
 
@@ -68,7 +68,7 @@ symfony serve
 ```
 
 ## 🧪 Testing
-* The project contains 76 tests and 223 assertions.
+* The project contains 83 tests and 267 assertions.
 * Tests are run against a dedicated PostgreSQL test database — no mocking is used.
 * GitHub Actions automatically runs the full test suite on every push or pull request to the main branch.
 
