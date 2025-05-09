@@ -63,7 +63,9 @@ jobs:
         until pg_isready -h localhost -p 5432 -U symfony; do
           echo "Waiting for PostgreSQL..."
           sleep 1
-        done
+        done    
+    - name: Copy .env.example to .env
+      run: cp .env.example .env
     - name: Generate JWT keys
       run: |
         mkdir -p config/jwt
