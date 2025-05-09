@@ -82,7 +82,7 @@ final class TagController extends AbstractController
             ],
             type: 'object',
             example: [
-                'title' => 'My new tag',
+                'name' => 'My new tag',
                 'colour' => '#4287f5',
             ]
         )
@@ -95,11 +95,15 @@ final class TagController extends AbstractController
         $name = $data['name'] ?? null;
         $colour = $data['colour'] ?? null;
 
+        $tagExists = $tagRepository->findOneBy(['name' => $name, 'creator' => $user]);
+        if ($tagExists !== null) {
+            return new JsonResponse(['error' => 'Tag already exists'], Response::HTTP_CONFLICT);
+        }
+
         $newTag = new Tag();
         $newTag->setName($name);
         $newTag->setColour($colour);
         $newTag->setCreator($user);
-
         $validationResponse = $validatorService->validate($newTag, null, ['tag']);
         if ($validationResponse !== null) {
             return $validationResponse;
