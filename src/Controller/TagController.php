@@ -95,9 +95,9 @@ final class TagController extends AbstractController
         $name = $data['name'] ?? null;
         $colour = $data['colour'] ?? null;
 
-        $tagExists = $tagRepository->findOneBy(['name' => $name, 'creator' => $user]);
-        if ($tagExists !== null) {
-            return new JsonResponse(['error' => 'Tag already exists'], Response::HTTP_CONFLICT);
+        $tagCheck = $tagRepository->findOneBy(['name' => $name, 'creator' => $user]);
+        if ($tagCheck !== null) {
+            return new JsonResponse(['error' => 'A tag with this name already exists'], Response::HTTP_CONFLICT);
         }
 
         $newTag = new Tag();
@@ -174,6 +174,11 @@ final class TagController extends AbstractController
 
         if ($tag === null) {
             return new JsonResponse(['error' => 'Tag not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $tagCheck = $tagRepository->findOneBy(['name' => $tag->getName(), 'creator' => $user]);
+        if ($tagCheck !== null) {
+            return new JsonResponse(['error' => 'A tag with this name already exists'], Response::HTTP_CONFLICT);
         }
 
         if ($tag->getCreator()->getId() !== $user->getId()) {
