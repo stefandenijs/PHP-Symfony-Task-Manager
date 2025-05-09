@@ -121,50 +121,122 @@ final class TagControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(400);
 
         $this->assertEquals('colour', $response[0]['field']);
-        $this->assertStringContainsString('Tag colour should match a hex colour value', $response[0]['message']);
+        $this->assertEquals('Tag colour should match a hex colour value', $response[0]['message']);
     }
 
+    public function testCreateTagAlreadyExistsForUser(): void
+    {
+        // Arrange
+        $testData =
+            [
+                'name' => 'New API Tag',
+                'colour' => '#123456',
+            ];
+
+        // Act
+        $this->client->request('POST', '/api/tag', content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Arrange
+        $this->assertResponseStatusCodeSame(409);
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('A tag with this name already exists', $response['error']);
+    }
+
+    public function testEditTag(): void
+    {
+        // Arrange
+        $tagId = $this->tagRepository->findOneBy(['name' => 'Tag 7'])->getId();
+        $testData = [
+            'name' => 'Edited API Tag 7',
+            'colour' => '#234567',
+        ];
+
+        // Act
+        $this->client->request('PUT', "/api/tag/$tagId", content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseRedirects("/api/tag/$tagId");
+        $updatedTagRes = $this->tagRepository->findOneBy(['name' => 'Edited API Tag 7']);
+        $this->assertNotNull($updatedTagRes);
+        $this->assertEquals($testData['name'], $updatedTagRes->getName());
+        $this->assertEquals($testData['colour'], $updatedTagRes->getColour());
+    }
+
+    public function testEditTagForbidden(): void
+    {
+        // Arrange
+        $tagId = $this->tagRepository->findOneBy(['name' => 'Tag 12'])->getId();
+        $testData = [
+            'name' => 'Edited API Tag 12',
+            'colour' => '#234567',
+        ];
+
+        // Act
+        $this->client->request('PUT', "/api/tag/$tagId", content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertEquals('Forbidden to access this resource', $response['error']);
+    }
+
+    public function testEditTagAlreadyExistsForUser(): void
+    {
+        // Arrange
+        $tagId = $this->tagRepository->findOneBy(['name' => 'Tag 8'])->getId();
+        $testData = [
+            'name' => 'Tag 6',
+            'colour' => '#123456',
+        ];
+
+        // Act
+        $this->client->request('PUT', "/api/tag/$tagId", content: json_encode($testData));
+        $response = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Assert
+        $this->assertResponseStatusCodeSame(409);
+        $this->assertArrayHasKey('error', $response);
+        $this->assertEquals('A tag with this name already exists', $response['error']);
+    }
 
     public function testDeleteTag(): void
     {
         // Arrange
-        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 2']);
+        $tagId = $this->tagRepository->findOneBy(['name' => 'Tag 2'])->getId();
 
         // Act
-        $this->client->request('DELETE', '/api/tag/' . $tag->getId());
+        $this->client->request('DELETE', "/api/tag/$tagId");
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
-
-        $response = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('Tag deleted successfully', $response['success']);
     }
 
     public function testDeleteTagForbidden(): void
     {
         // Arrange
-        $tag = $this->tagRepository->findOneBy(['name' => 'Tag 12']);
+        $tagId = $this->tagRepository->findOneBy(['name' => 'Tag 12'])->getId();
 
         // Act
-        $this->client->request('DELETE', '/api/tag/' . $tag->getId());
+        $this->client->request('DELETE', "/api/tag/$tagId");
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(403);
-
-        $response = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('Forbidden to access this resource', $response['error']);
     }
-
 
     public function testDeleteTagNotFound(): void
     {
         // Act
         $this->client->request('DELETE', '/api/tag/' . Uuid::v4()->toRfc4122());
+        $response = json_decode($this->client->getResponse()->getContent(), true);
 
         // Assert
         $this->assertResponseStatusCodeSame(404);
-
-        $response = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('Tag not found', $response['error']);
     }
 }
