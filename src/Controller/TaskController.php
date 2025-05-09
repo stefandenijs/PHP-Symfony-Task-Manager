@@ -355,6 +355,11 @@ final class TaskController extends AbstractController
                 $tag->setName($tagData['name']);
                 $tag->setColour($tagData['colour']);
 
+                $tagCheck = $tagRepository->findOneBy(['name' => $tagData['name'], 'creator' => $user]);
+                if ($tagCheck !== null) {
+                    return new JsonResponse(['error' => "A tag with this name already exists: {$tagData['name']}"], Response::HTTP_CONFLICT);
+                }
+
                 $validationResponse = $validatorService->validate($tag, null, ['tag']);
                 if ($validationResponse !== null) {
                     return $validationResponse;
