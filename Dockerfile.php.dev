@@ -1,0 +1,47 @@
+FROM php:8.2-fpm
+
+# Install dev-friendly system dependencies (including git, unzip, curl)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libicu-dev \
+    libxml2-dev \
+    libzip-dev \
+    unzip \
+    zlib1g-dev \
+    libonig-dev \
+    libpq-dev \
+    git \
+    curl \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions needed for Symfony + Postgres dev
+RUN docker-php-ext-install \
+    intl \
+    pdo \
+    pdo_pgsql \
+    zip \
+    xml \
+    opcache \
+    dom
+
+# Copy Composer from official image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Change www-data UID/GID to 1000 for matching host user (avoid permission issues)
+RUN usermod -u 1000 www-data \
+    && groupmod -g 1000 www-data
+
+# Create working directory and set permissions
+RUN mkdir -p /var/www \
+    && chown -R www-data:www-data /var/www
+
+WORKDIR /var/www
+
+# Copy project files
+COPY . .
+
+# Install composer dependencies including dev packages
+RUN composer install
+
+# Run container as www-data user (not root)
+USER www-data

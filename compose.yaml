@@ -1,6 +1,33 @@
 
 services:
 ###> doctrine/doctrine-bundle ###
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile.php.dev
+    volumes:
+      - .:/var/www
+    working_dir: /var/www
+    expose:
+      - "9000"
+    depends_on:
+      - database
+    networks:
+      - taskmanager-network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx.dev
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www:ro
+    depends_on:
+      - php
+    networks:
+      - taskmanager-network
+
   database:
     container_name: task-db
     restart: always
@@ -21,9 +48,15 @@ services:
       - database_data:/var/lib/postgresql/data:rw
       # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
       # - ./docker/db/data:/var/lib/postgresql/data:rw
+    networks:
+      - taskmanager-network
 ###< doctrine/doctrine-bundle ###
 
 volumes:
 ###> doctrine/doctrine-bundle ###
   database_data:
 ###< doctrine/doctrine-bundle ###
+
+networks:
+  taskmanager-network:
+    driver: bridge

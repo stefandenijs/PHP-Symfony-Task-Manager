@@ -1,0 +1,4 @@
+FROM nginx:latest
+RUN rm -f /etc/nginx/conf.d/*.conf
+COPY .docker/nginx/conf.d/default.conf /etc/nginx/conf.d/
+RUN usermod -u 1000 www-data
