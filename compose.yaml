@@ -2,6 +2,8 @@
 services:
 ###> doctrine/doctrine-bundle ###
   php:
+    container_name: php
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile.php.dev
@@ -16,6 +18,8 @@ services:
       - taskmanager-network
 
   nginx:
+    container_name: nginx
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile.nginx.dev
